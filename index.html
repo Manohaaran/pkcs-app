@@ -1,0 +1,2224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PKCS — Professional Knowledge Capture System</title>
+<style>
+:root{
+  --navy:#2E4A6A;--navy-dk:#1B2E42;--navy-lt:#EEF2F7;--navy-md:#3D5E82;
+  --gold:#B8902E;--gold-lt:#F5EDD0;--gold-mid:#C9A84C;
+  --green:#2D7A4F;--green-lt:#D6EDE1;
+  --amber:#B8740A;--amber-lt:#FDF0D5;
+  --red:#A0281E;--red-lt:#FAD9D6;
+  --blue:#2451A0;--blue-lt:#E8F0FE;
+  --slate:#4A6E96;--white:#fff;--off:#F8F8F6;
+  --stripe:#F2F5FA;--ch:#2E2E2E;--mg:#888;--lg:#D4D4D0;--bd:#E0E4EA;
+  --sh:0 2px 12px rgba(46,74,106,.09);--sh-lg:0 8px 32px rgba(46,74,106,.14);
+  --r:8px;--r-sm:4px;--tr:.18s ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--off);color:var(--ch);min-height:100vh;font-size:14px;line-height:1.55}
+
+/* ── LAYOUT ─────────────────────────────────────────────────── */
+.app{display:flex;min-height:100vh}
+.sidebar{width:216px;min-width:216px;background:var(--navy-dk);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto}
+.main{margin-left:216px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--white);border-bottom:1px solid var(--bd);padding:13px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.page{padding:24px 26px;flex:1}
+
+/* ── SIDEBAR ────────────────────────────────────────────────── */
+.sb-brand{padding:18px 16px 13px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-abbr{font-size:21px;font-weight:700;color:var(--gold-mid);letter-spacing:2px}
+.sb-full{font-size:9px;color:rgba(255,255,255,.32);text-transform:uppercase;letter-spacing:1px;line-height:1.5;margin-top:3px}
+.nav-sect{padding:10px 0 3px}
+.nav-lbl{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.26);padding:0 16px 5px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 16px;cursor:pointer;color:rgba(255,255,255,.60);font-size:13px;transition:all var(--tr);border-left:3px solid transparent;user-select:none}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.06)}
+.nav-item.active{color:var(--gold-mid);border-left-color:var(--gold-mid);background:rgba(200,164,76,.09);font-weight:600}
+.nav-icon{font-size:14px;width:16px;text-align:center;flex-shrink:0}
+.sb-foot{margin-top:auto;padding:13px 16px;border-top:1px solid rgba(255,255,255,.07);font-size:9.5px;color:rgba(255,255,255,.20);line-height:1.8}
+
+/* ── TOPBAR ─────────────────────────────────────────────────── */
+.pg-title{font-size:18px;font-weight:700;color:var(--navy)}
+.pg-sub{font-size:11.5px;color:var(--mg);margin-top:1px}
+.topbar-acts{display:flex;gap:9px;align-items:center}
+
+/* ── BUTTONS ────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--r-sm);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all var(--tr);white-space:nowrap;font-family:inherit;line-height:1.3}
+.btn-primary{background:var(--navy);color:#fff}.btn-primary:hover{background:var(--navy-dk)}
+.btn-gold{background:var(--gold);color:#fff}.btn-gold:hover{background:var(--navy-dk)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#1d5234}
+.btn-outline{background:transparent;color:var(--navy);border:1.5px solid var(--navy)}.btn-outline:hover{background:var(--navy-lt)}
+.btn-ghost{background:transparent;color:var(--mg);border:1px solid var(--bd)}.btn-ghost:hover{background:var(--off);color:var(--ch)}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{background:#7a1e16}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px}
+.btn-full{width:100%;justify-content:center}
+
+/* ── MODE SELECTOR ──────────────────────────────────────────── */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.mode-card{background:var(--white);border:2px solid var(--bd);border-radius:var(--r);padding:22px 20px;cursor:pointer;transition:all var(--tr);text-align:center}
+.mode-card:hover{border-color:var(--navy);box-shadow:var(--sh)}
+.mode-card.selected{border-color:var(--navy);background:var(--navy-lt)}
+.mode-icon{font-size:32px;margin-bottom:10px}
+.mode-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:5px}
+.mode-desc{font-size:12px;color:var(--mg);line-height:1.5}
+.mode-badge{display:inline-block;margin-top:8px;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:600;background:var(--navy-lt);color:var(--navy)}
+.mode-card.selected .mode-badge{background:var(--navy);color:#fff}
+
+/* ── CAPTURE LAYOUT ─────────────────────────────────────────── */
+.capture-wrap{background:var(--white);border-radius:var(--r);border:1px solid var(--bd);box-shadow:var(--sh);overflow:hidden}
+.capture-hdr{background:var(--navy);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.capture-hdr-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.capture-hdr-title{font-size:14px;font-weight:600}
+.ai-toggle{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:500;border:1px solid rgba(255,255,255,.2);color:#fff;transition:all var(--tr)}
+.ai-toggle:hover{background:rgba(255,255,255,.18)}
+.ai-toggle.ai-on{background:var(--blue-lt);color:var(--blue);border-color:var(--blue)}
+.toggle-dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.4);transition:background var(--tr)}
+.ai-toggle.ai-on .toggle-dot{background:var(--blue)}
+.capture-meta{padding:14px 20px;background:var(--off);border-bottom:1px solid var(--bd);display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+.capture-meta input,.capture-meta select{font-size:12px;padding:7px 10px}
+.cornell-wrap{display:grid;grid-template-columns:1fr 2fr;min-height:300px}
+.cornell-cue{border-right:2px solid var(--gold-lt);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.cornell-notes{padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.col-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--navy);margin-bottom:4px}
+.col-hint{font-size:11px;color:var(--mg);margin-bottom:6px;font-style:italic}
+.cornell-textarea{width:100%;border:1.5px solid var(--bd);border-radius:var(--r-sm);padding:10px 12px;font-family:inherit;font-size:13px;color:var(--ch);resize:vertical;transition:border-color var(--tr);line-height:1.6}
+.cornell-textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(46,74,106,.08)}
+.cue-ta{min-height:220px;background:var(--stripe)}
+.notes-ta{min-height:220px}
+.ai-ta{min-height:100px}
+.capture-bottom{border-top:2px solid var(--gold-lt);padding:14px 20px;display:grid;grid-template-columns:2fr 1fr;gap:14px;background:var(--gold-lt)}
+.syn-wrap{display:flex;flex-direction:column;gap:6px}
+.syn-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--navy)}
+.syn-ta{min-height:70px;border:1.5px solid var(--gold-mid);background:var(--white)}
+.act-wrap{display:flex;flex-direction:column;gap:6px}
+.act-ta{min-height:70px;border:1.5px solid var(--bd);background:var(--white)}
+.capture-footer{padding:14px 20px;border-top:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:var(--white)}
+.session-progress{font-size:12px;color:var(--mg);font-style:italic}
+
+/* ── AI CAPTURE COLUMNS ─────────────────────────────────────── */
+.ai-cornell-wrap{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.ai-left{border-right:2px solid var(--blue-lt);padding:14px 16px;background:var(--blue-lt)}
+.ai-right{padding:14px 16px}
+.ai-col-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--blue);margin-bottom:4px}
+
+/* ── CARDS / TABLES ─────────────────────────────────────────── */
+.card{background:var(--white);border-radius:var(--r);border:1px solid var(--bd);box-shadow:var(--sh)}
+.card-hdr{padding:13px 18px 11px;border-bottom:2px solid var(--gold-lt);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.card-title{font-size:14px;font-weight:700;color:var(--navy)}
+.card-body{padding:18px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--slate);color:#fff;font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;padding:9px 11px;text-align:left;white-space:nowrap}
+td{padding:9px 11px;border-bottom:1px solid var(--bd);vertical-align:middle}
+tr:nth-child(even) td{background:var(--stripe)}
+tr:hover td{background:var(--navy-lt)!important}
+.overdue-row td{background:var(--red-lt)!important}
+
+/* ── STATS ──────────────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:11px;margin-bottom:20px}
+.stat-card{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);padding:13px 15px;box-shadow:var(--sh);border-top:3px solid var(--slate)}
+.stat-card.gold{border-top-color:var(--gold)}.stat-card.green{border-top-color:var(--green)}
+.stat-card.amber{border-top-color:var(--amber)}.stat-card.red{border-top-color:var(--red)}
+.stat-card.blue{border-top-color:var(--blue)}
+.stat-num{font-size:28px;font-weight:700;color:var(--navy);line-height:1}
+.stat-lbl{font-size:11px;color:var(--mg);margin-top:4px;text-transform:uppercase;letter-spacing:.3px}
+
+/* ── BADGES ─────────────────────────────────────────────────── */
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-open{background:var(--red-lt);color:var(--red)}
+.b-prog{background:var(--amber-lt);color:var(--amber)}
+.b-done{background:var(--green-lt);color:var(--green)}
+.b-none{background:var(--stripe);color:var(--mg)}
+.b-hold{background:var(--navy-lt);color:var(--slate)}
+.code-pill{display:inline-block;padding:2px 7px;border-radius:var(--r-sm);font-size:11px;font-weight:600;white-space:nowrap;font-family:monospace}
+.src-badge{display:inline-block;padding:2px 8px;border-radius:var(--r-sm);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;background:var(--navy-lt);color:var(--navy)}
+.src-AISession,.src-AI{background:var(--blue-lt);color:var(--blue)}
+.src-Meeting{background:#FFF3CD;color:#856404}
+.src-Training{background:var(--green-lt);color:var(--green)}
+.src-Conference{background:#F3E5F5;color:#6A1B9A}
+.src-Briefing{background:#FBE9E7;color:#BF360C}
+.src-Workshop{background:#E0F2F1;color:#00695C}
+.cap-badge{display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:600;background:var(--blue-lt);color:var(--blue)}
+.cap-badge.trad{background:var(--gold-lt);color:var(--gold)}
+
+/* ── FORMS ──────────────────────────────────────────────────── */
+.fg{display:flex;flex-direction:column;gap:4px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+.fgap{display:flex;flex-direction:column;gap:11px}
+label{font-size:11px;font-weight:600;color:var(--navy);text-transform:uppercase;letter-spacing:.4px}
+.req{color:var(--red);margin-left:2px}
+input,select,textarea{font-family:inherit;font-size:13px;padding:8px 10px;border:1.5px solid var(--bd);border-radius:var(--r-sm);color:var(--ch);background:var(--white);transition:border-color var(--tr);width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(46,74,106,.08)}
+textarea{resize:vertical;min-height:68px}
+.fhint{font-size:11px;color:var(--mg);margin-top:2px}
+
+/* ── FILTER BAR ─────────────────────────────────────────────── */
+.filter-bar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:13px}
+.filter-bar input,.filter-bar select{max-width:180px;padding:7px 9px;font-size:12px}
+.filter-bar .search{max-width:230px}
+
+/* ── MODAL ──────────────────────────────────────────────────── */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:200;display:flex;align-items:center;justify-content:center;padding:18px}
+.modal{background:var(--white);border-radius:var(--r);box-shadow:var(--sh-lg);width:100%;max-width:640px;max-height:92vh;display:flex;flex-direction:column}
+.modal-lg{max-width:840px}
+.modal-hdr{padding:15px 20px 12px;border-bottom:2px solid var(--gold-lt);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:16px;font-weight:700;color:var(--navy)}
+.modal-x{background:none;border:none;font-size:20px;color:var(--mg);cursor:pointer;padding:2px 6px;border-radius:var(--r-sm)}
+.modal-x:hover{background:var(--off);color:var(--ch)}
+.modal-body{padding:18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:11px}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:9px;flex-shrink:0}
+
+/* ── NOTES VIEWER ───────────────────────────────────────────── */
+.notes-viewer{background:var(--off);border-radius:var(--r);border:1px solid var(--bd);overflow:hidden}
+.nv-hdr{background:var(--navy);color:#fff;padding:10px 14px;font-size:12px;font-weight:600}
+.nv-grid{display:grid;grid-template-columns:1fr 2fr;border-top:1px solid var(--bd)}
+.nv-cue{border-right:2px solid var(--gold-lt);padding:12px 14px;background:var(--stripe)}
+.nv-notes{padding:12px 14px}
+.nv-col-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--navy);margin-bottom:6px}
+.nv-text{font-size:13px;line-height:1.65;white-space:pre-wrap;color:var(--ch)}
+.nv-syn{border-top:2px solid var(--gold-lt);padding:12px 14px;background:var(--gold-lt)}
+.nv-act{border-top:1px solid var(--bd);padding:12px 14px}
+.nv-ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--bd)}
+.nv-ai-left{border-right:1px solid var(--blue-lt);padding:12px 14px;background:var(--blue-lt)}
+.nv-ai-right{padding:12px 14px}
+
+/* ── DASHBOARD ──────────────────────────────────────────────── */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.recent-list{list-style:none}
+.ri{display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--bd)}
+.ri:last-child{border-bottom:none}
+.rdot{width:7px;height:7px;border-radius:50%;background:var(--slate);margin-top:5px;flex-shrink:0}
+.rtitle{font-weight:500;font-size:13px;line-height:1.4}
+.rmeta{font-size:11px;color:var(--mg);margin-top:2px;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.month-chart{display:flex;align-items:flex-end;gap:3px;height:68px;padding:0 2px}
+.mbar-w{display:flex;flex-direction:column;align-items:center;flex:1;height:100%;justify-content:flex-end}
+.mbar{width:100%;background:var(--slate);border-radius:3px 3px 0 0;min-height:2px}
+.mbar:hover{background:var(--gold)}
+.mlbl{font-size:9px;color:var(--mg);margin-top:3px}
+.tbars{display:flex;flex-direction:column;gap:6px}
+.tbar-row{display:flex;align-items:center;gap:7px}
+.tbar-lbl{font-size:11px;font-weight:600;width:34px;font-family:monospace}
+.tbar-track{flex:1;height:7px;background:var(--stripe);border-radius:4px;overflow:hidden}
+.tbar-fill{height:100%;border-radius:4px}
+.tbar-n{font-size:11px;color:var(--mg);width:20px;text-align:right}
+
+/* ── TRIGGER BOX ────────────────────────────────────────────── */
+.trigger-box{background:linear-gradient(135deg,var(--navy-dk) 0%,var(--navy-md) 100%);color:#fff;border-radius:var(--r);padding:18px 20px;margin-bottom:20px;border-left:4px solid var(--gold-mid)}
+.trigger-q{font-size:14px;font-style:italic;color:var(--gold-lt);line-height:1.5;margin:7px 0 9px}
+.trigger-ans{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px}
+.t-no{color:rgba(255,255,255,.55)}.t-yes{color:var(--gold-mid);font-weight:600}
+
+/* ── REFLECTION ─────────────────────────────────────────────── */
+.rp{border-left:3px solid var(--gold);padding:10px 14px;background:var(--gold-lt);border-radius:0 var(--r-sm) var(--r-sm) 0;margin-bottom:5px}
+.rp-q{font-weight:600;color:var(--navy);font-size:13px}
+.rp-hint{font-size:11.5px;color:var(--mg);margin-top:2px}
+
+/* ── GUIDE ──────────────────────────────────────────────────── */
+.guide-card{display:flex;gap:13px;align-items:flex-start;padding:15px 18px}
+.gi{width:32px;height:32px;border-radius:50%;background:var(--navy-lt);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--navy);flex-shrink:0}
+.gt{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.gd{font-size:13px;line-height:1.65;color:var(--ch)}
+
+/* ── EMPTY STATE ────────────────────────────────────────────── */
+.empty{text-align:center;padding:38px 20px;color:var(--mg)}
+.empty-icon{font-size:34px;margin-bottom:9px}
+.empty-title{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:5px}
+.empty-text{font-size:13px;max-width:280px;margin:0 auto 14px}
+
+/* ── MISC ───────────────────────────────────────────────────── */
+.mb-2{margin-bottom:11px}.mb-3{margin-bottom:16px}.mb-4{margin-bottom:22px}
+.mt-1{margin-top:6px}.mt-2{margin-top:11px}
+.flex{display:flex}.gap-2{gap:8px}.ic{align-items:center}.jb{justify-content:space-between}
+.text-sm{font-size:12px}.text-xs{font-size:11px}.text-mg{color:var(--mg)}.text-navy{color:var(--navy)}
+.fw6{font-weight:600}.fw7{font-weight:700}
+.rule{height:2px;background:var(--gold-lt);border:none;margin:14px 0}
+.divider{height:1px;background:var(--bd);border:none;margin:16px 0}
+.td-acts{display:flex;gap:4px}
+.row-link{cursor:pointer;color:var(--slate);text-decoration:underline;font-family:monospace;font-size:12px}
+.info-box{background:var(--navy-lt);border:1px solid var(--bd);border-left:3px solid var(--navy);border-radius:var(--r-sm);padding:11px 14px;font-size:13px;color:var(--navy)}
+.warn-box{background:var(--amber-lt);border-left:3px solid var(--amber);border-radius:var(--r-sm);padding:10px 14px;font-size:13px;color:var(--amber)}
+
+/* ── OCR SCAN FEATURE ───────────────────────────────────────── */
+.ocr-banner{background:linear-gradient(135deg,#1a3a5c 0%,#2E4A6A 100%);border-radius:var(--r);padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.ocr-banner-left{display:flex;align-items:center;gap:14px}
+.ocr-banner-icon{font-size:28px;flex-shrink:0}
+.ocr-banner-text{}
+.ocr-banner-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:3px}
+.ocr-banner-desc{font-size:12px;color:rgba(255,255,255,.65);line-height:1.5}
+.inet-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:600;color:#fff;white-space:nowrap}
+.inet-dot{width:7px;height:7px;border-radius:50%;background:#4CAF50;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.scan-drop-zone{border:2px dashed var(--navy);border-radius:var(--r);padding:32px 20px;text-align:center;cursor:pointer;transition:all var(--tr);background:var(--navy-lt);position:relative}
+.scan-drop-zone:hover,.scan-drop-zone.drag-over{border-color:var(--gold);background:var(--gold-lt)}
+.scan-drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.scan-drop-icon{font-size:36px;margin-bottom:10px}
+.scan-drop-title{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:5px}
+.scan-drop-sub{font-size:12px;color:var(--mg)}
+.scan-preview-wrap{position:relative;border-radius:var(--r);overflow:hidden;background:#000;max-height:300px;display:flex;align-items:center;justify-content:center}
+.scan-preview-wrap img{max-width:100%;max-height:300px;object-fit:contain}
+.scan-preview-remove{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.ocr-processing{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 20px;gap:14px}
+.ocr-spinner{width:40px;height:40px;border:4px solid var(--navy-lt);border-top-color:var(--navy);border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ocr-processing-text{font-size:13px;color:var(--navy);font-weight:500;text-align:center}
+.ocr-processing-sub{font-size:12px;color:var(--mg);text-align:center}
+.ocr-result{background:var(--white);border-radius:var(--r);border:1px solid var(--bd)}
+.ocr-result-hdr{background:var(--green);color:#fff;padding:10px 16px;font-size:13px;font-weight:600;border-radius:var(--r) var(--r) 0 0;display:flex;align-items:center;gap:8px}
+.ocr-result-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.ocr-field{display:flex;flex-direction:column;gap:3px}
+.ocr-field label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--navy)}
+.ocr-field textarea,.ocr-field input{font-size:13px;border:1.5px solid var(--bd);border-radius:var(--r-sm);padding:7px 10px;font-family:inherit;color:var(--ch);width:100%;resize:vertical}
+.ocr-field textarea:focus,.ocr-field input:focus{outline:none;border-color:var(--navy)}
+.ocr-confidence{font-size:11px;color:var(--mg);padding:8px 16px;border-top:1px solid var(--bd);display:flex;align-items:center;gap:6px}
+.ocr-err{background:var(--red-lt);border-left:3px solid var(--red);border-radius:var(--r-sm);padding:12px 16px;font-size:13px;color:var(--red)}
+.cam-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;border:2px solid var(--navy);background:var(--white);color:var(--navy);transition:all var(--tr)}
+.cam-btn:hover{background:var(--navy);color:#fff}
+.cam-btn.cam-active{background:var(--navy);color:#fff}
+
+/* ── TOAST ──────────────────────────────────────────────────── */
+#toasts{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--navy-dk);color:#fff;padding:10px 15px;border-radius:var(--r);font-size:13px;box-shadow:var(--sh-lg);border-left:4px solid var(--gold-mid);max-width:300px;animation:sUp .2s ease}
+.toast.ok{border-left-color:var(--green)}.toast.err{border-left-color:var(--red)}
+@keyframes sUp{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ── API KEY SETUP OVERLAY ───────────────────────────────────── */
+.setup-overlay{position:fixed;inset:0;background:rgba(27,46,66,.92);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
+.setup-box{background:var(--white);border-radius:var(--r);box-shadow:var(--sh-lg);width:100%;max-width:500px;overflow:hidden}
+.setup-hdr{background:var(--navy);color:#fff;padding:22px 24px 18px}
+.setup-hdr-title{font-size:18px;font-weight:700;margin-bottom:5px}
+.setup-hdr-sub{font-size:12px;color:rgba(255,255,255,.6);line-height:1.5}
+.setup-body{padding:22px 24px}
+.setup-foot{padding:14px 24px;border-top:1px solid var(--bd);background:var(--off);display:flex;justify-content:flex-end;gap:10px}
+.key-input-wrap{position:relative}
+.key-input-wrap input{font-family:monospace;font-size:13px;padding-right:44px}
+.key-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mg);font-size:16px}
+.key-status{display:flex;align-items:center;gap:6px;font-size:12px;margin-top:6px}
+.key-dot{width:8px;height:8px;border-radius:50%}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media(max-width:900px){
+  .cornell-wrap,.ai-cornell-wrap{grid-template-columns:1fr}
+  .cornell-cue,.ai-left{border-right:none;border-bottom:2px solid var(--gold-lt)}
+  .capture-bottom{grid-template-columns:1fr}
+  .capture-meta{grid-template-columns:1fr 1fr}
+  .dash-grid{grid-template-columns:1fr}
+}
+@media(max-width:650px){
+  .sidebar{width:48px;min-width:48px}
+  .sb-full,.nav-lbl,.nav-item span,.sb-foot{display:none}
+  .sb-abbr{font-size:15px}
+  .main{margin-left:48px}
+  .fr,.fr3{grid-template-columns:1fr}
+  .mode-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .capture-meta{grid-template-columns:1fr}
+  .nv-grid,.nv-ai-grid{grid-template-columns:1fr}
+  .nv-cue,.nv-ai-left{border-right:none;border-bottom:1px solid var(--bd)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-abbr">PKCS</div>
+    <div class="sb-full">Professional Knowledge<br>Capture System</div>
+  </div>
+  <div class="nav-sect">
+    <div class="nav-lbl">Overview</div>
+    <div class="nav-item" id="nav-dashboard"  onclick="goTo('dashboard')" ><span class="nav-icon">◈</span><span>Dashboard</span></div>
+  </div>
+  <div class="nav-sect">
+    <div class="nav-lbl">Capture</div>
+    <div class="nav-item" id="nav-capture"    onclick="goTo('capture')"   ><span class="nav-icon">✎</span><span>Capture Session</span></div>
+  </div>
+  <div class="nav-sect">
+    <div class="nav-lbl">Four Layers</div>
+    <div class="nav-item" id="nav-sessions"   onclick="goTo('sessions')"  ><span class="nav-icon">📋</span><span>Session Log</span></div>
+    <div class="nav-item" id="nav-acttracker" onclick="goTo('acttracker')"><span class="nav-icon">✓</span><span>Action Tracker</span></div>
+    <div class="nav-item" id="nav-topics"     onclick="goTo('topics')"    ><span class="nav-icon">⬡</span><span>Topic Register</span></div>
+    <div class="nav-item" id="nav-reflection" onclick="goTo('reflection')" ><span class="nav-icon">◎</span><span>Reflection</span></div>
+  </div>
+  <div class="nav-sect">
+    <div class="nav-lbl">Tools</div>
+    <div class="nav-item" id="nav-guide"      onclick="goTo('guide')"     ><span class="nav-icon">?</span><span>How to Use</span></div>
+    <div class="nav-item" id="nav-settings"   onclick="goTo('settings')"  ><span class="nav-icon">⚙</span><span>Settings</span></div>
+    <div class="nav-item"                     onclick="exportCSV()"        ><span class="nav-icon">↓</span><span>Export CSV</span></div>
+  </div>
+  <div class="sb-foot">Dr. Mano · manodr.com<br>PKCS v3.0</div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="pg-title" id="pg-title">Dashboard</div>
+      <div class="pg-sub"   id="pg-sub">Professional Knowledge Capture System</div>
+    </div>
+    <div class="topbar-acts" id="pg-acts"></div>
+  </div>
+  <div class="page" id="pg-content"></div>
+</div>
+</div>
+
+<!-- API KEY SETUP OVERLAY -->
+<div class="setup-overlay" id="setup-overlay" style="display:none">
+  <div class="setup-box">
+    <div class="setup-hdr">
+      <div class="setup-hdr-title">🔑 Set Up Smart Scan</div>
+      <div class="setup-hdr-sub">The Smart Scan feature reads your handwritten pages and fills the fields automatically. It needs a one-time API key to work. Your key is stored only on this device and is never shared.</div>
+    </div>
+    <div class="setup-body">
+      <div class="fgap">
+        <div class="fg">
+          <label>Your Anthropic API Key <span class="req">*</span></label>
+          <div class="key-input-wrap">
+            <input type="password" id="setup-key-input" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
+            <button class="key-toggle" onclick="toggleKeyVisibility()" title="Show/hide key">👁</button>
+          </div>
+          <div id="setup-key-status" class="key-status text-mg">Enter your key above</div>
+          <div class="fhint mt-1">Get your key at <strong>console.anthropic.com</strong> → API Keys → Create Key. The key starts with <code style="font-family:monospace;font-size:11px">sk-ant-</code></div>
+        </div>
+        <div style="background:var(--gold-lt);border-left:3px solid var(--gold);padding:10px 14px;border-radius:4px;font-size:12px;line-height:1.6">
+          <strong>Privacy:</strong> Your key is stored only in this browser on this device. It is used solely to power the Smart Scan. If you clear your browser data, you will need to enter it again. Do not share this key with anyone.
+        </div>
+        <div style="background:var(--navy-lt);border-left:3px solid var(--navy);padding:10px 14px;border-radius:4px;font-size:12px;line-height:1.6">
+          <strong>No key?</strong> You can skip this and fill the fields manually after photographing your page. The rest of the app works fully without a key.
+        </div>
+      </div>
+    </div>
+    <div class="setup-foot">
+      <button class="btn btn-ghost" onclick="dismissSetup()">Skip for now</button>
+      <button class="btn btn-primary" onclick="saveApiKey()">Save Key &amp; Enable Scan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-ov" id="modal-ov" style="display:none" onclick="onOvClick(event)">
+  <div class="modal" id="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-title">—</div>
+      <button class="modal-x" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot"></div>
+  </div>
+</div>
+<div id="toasts"></div>
+
+<script>
+"use strict";
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  PKCS CONFIGURATION — EDIT THIS LINE ONLY                   ║
+// ║  Paste your Anthropic API key between the quotes below       ║
+// ╚══════════════════════════════════════════════════════════════╝
+const SCAN_API_KEY = 'PASTE-YOUR-KEY-HERE';
+// ══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// DATA LAYER
+// ═══════════════════════════════════════════════════════════════════════
+const SK={S:'pkcs3_sess',A:'pkcs3_acts',T:'pkcs3_tops',R:'pkcs3_ref'};
+
+const DEF_TOPS=[
+  {code:'GOV',area:'Governance',           col:'#4A6E96'},
+  {code:'PRO',area:'Procurement',          col:'#2D7A4F'},
+  {code:'VND',area:'Vendor Management',    col:'#B8740A'},
+  {code:'STR',area:'Strategy',             col:'#6A2E4A'},
+  {code:'FIN',area:'Finance',              col:'#2E4A6A'},
+  {code:'OPS',area:'Operations',           col:'#00695C'},
+  {code:'HR', area:'People & Organisation',col:'#B8902E'},
+  {code:'AI', area:'AI & Technology',      col:'#2451A0'},
+  {code:'LEG',area:'Legal & Compliance',   col:'#A0281E'},
+  {code:'TRN',area:'Training & Dev',       col:'#2D7A4F'},
+  {code:'MKT',area:'Marketing & Biz Dev',  col:'#6A1B9A'},
+  {code:'CUS',area:'Client & Stakeholder', col:'#BF360C'},
+];
+
+// captureMode: 'digital' | 'ai' | 'traditional'
+// Digital capture stores: cueNotes, mainNotes, synthesis, actionNotes
+// AI capture stores: aiIntent, aiResponse, aiVerify, aiDeploy
+const DEF_SESS=[
+  {id:'S-001',date:'2025-05-05',topic:'GOV',source:'Training',title:'Procurement Controls & Governance Workshop',fac:'Dr. Mano',insight:'Most governance failures occur because controls are designed for cooperative actors, not deliberate exploiters.',actionFlag:'Yes',actRef:'A-001',status:'Open',ref:'Journal p.3',notes:'Full day. Dark Triad concepts discussed.',captureMode:'traditional',cueNotes:'',mainNotes:'',synthesis:'',actionNotes:'',aiIntent:'',aiResponse:'',aiVerify:'',aiDeploy:''},
+  {id:'S-002',date:'2025-05-07',topic:'VND',source:'Meeting',title:'Vendor Review: Contract Renewal Discussion',fac:'Procurement Committee',insight:'Incumbent vendor has held specification authority for 3 cycles. Independent market test required.',actionFlag:'Yes',actRef:'A-002',status:'In Progress',ref:'Journal p.5',notes:'Sole-source pattern flagged.',captureMode:'traditional',cueNotes:'',mainNotes:'',synthesis:'',actionNotes:'',aiIntent:'',aiResponse:'',aiVerify:'',aiDeploy:''},
+  {id:'S-003',date:'2025-05-09',topic:'STR',source:'AI Session',title:'Strategic Options: Market Entry Analysis',fac:'Claude (Anthropic)',insight:'Three viable entry routes identified. Route B requires partnership. Verify regulatory requirements independently.',actionFlag:'Yes',actRef:'A-003',status:'Open',ref:'',notes:'Trigger test applied. AI output must be independently verified.',captureMode:'ai',cueNotes:'',mainNotes:'',synthesis:'What to deploy: Route B feasibility brief for leadership. Route A requires 6-month lead time. Route C ruled out on regulatory grounds.',actionNotes:'Commission legal review of Route B regulatory position before board presentation.',aiIntent:'Evaluate three market entry options for Southeast Asia expansion. Need decision criteria and risk profile for each route.',aiResponse:'Route A: direct subsidiary. Route B: JV with local partner. Route C: acquisition. Route B fastest to market but requires partner vetting. Route A highest control but slowest. Route C highest risk, capital-intensive.',aiVerify:'Regulatory requirements for JV structures in target market. Tax implications of Route B. Partner vetting criteria for Route B candidates.',aiDeploy:'Route B feasibility brief for leadership. Assign partner vetting to BD team. Legal review of regulatory position.'},
+  {id:'S-004',date:'2025-05-12',topic:'TRN',source:'Conference',title:'Supply Chain Risk Management Forum',fac:'ASCM Regional',insight:'Geopolitical risk now ranked above cost optimisation by 74% of SCM leaders surveyed.',actionFlag:'No',actRef:'',status:'No Action',ref:'Journal p.9',notes:'Stats to verify before citing.',captureMode:'digital',cueNotes:'Geopolitical risk\nResilience vs efficiency\nNear-shoring trend\nDigital twin adoption\nESG compliance pressure',mainNotes:'Opening keynote: SCM leaders shifting from efficiency-first to resilience-first. 74% rank geopolitical risk above cost optimisation (verify source).\n\nPanel 1: Near-shoring accelerating. 3-5 year payback period cited for supply chain reconfiguration.\n\nPanel 2: Digital twins emerging as standard. ROI cases still immature for most industries.\n\nESG compliance now a procurement qualifier in EU markets — cascading to Asian suppliers.',synthesis:'The shift from efficiency to resilience is real but implementation guidance remains thin. Near-shoring data worth tracking.',actionNotes:'',aiIntent:'',aiResponse:'',aiVerify:'',aiDeploy:''},
+];
+
+const DEF_ACTS=[
+  {id:'A-001',sessRef:'S-001',captured:'2025-05-05',topic:'GOV',desc:'Develop supplier rotation protocol for vendor-facing officers. Mandatory 18-month review cycle.',owner:'Dr. Mano',due:'2025-06-30',status:'In Progress',done:'',notes:'Draft circulated. Awaiting sign-off.'},
+  {id:'A-002',sessRef:'S-002',captured:'2025-05-07',topic:'VND',desc:'Commission independent market test for incumbent vendor before contract renewal in Q3.',owner:'Procurement Mgr',due:'2025-07-15',status:'Open',done:'',notes:'Budget approval pending.'},
+  {id:'A-003',sessRef:'S-003',captured:'2025-05-09',topic:'STR',desc:'Verify regulatory requirements for Route B market entry with legal counsel.',owner:'Legal Team',due:'2025-05-30',status:'Open',done:'',notes:'AI analysis to validate. Do not act on AI output alone.'},
+];
+
+function dbLoad(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def}catch(e){return def}}
+function dbSave(key,val){try{localStorage.setItem(key,JSON.stringify(val))}catch(e){}}
+
+let DB_S=dbLoad(SK.S,DEF_SESS);
+let DB_A=dbLoad(SK.A,DEF_ACTS);
+let DB_T=dbLoad(SK.T,DEF_TOPS);
+let DB_R=dbLoad(SK.R,{});
+
+function persist(){dbSave(SK.S,DB_S);dbSave(SK.A,DB_A);dbSave(SK.T,DB_T);dbSave(SK.R,DB_R);}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ROUTER
+// ═══════════════════════════════════════════════════════════════════════
+const PAGE_META={
+  dashboard: {title:'Dashboard',        sub:'Your knowledge capture at a glance'},
+  capture:   {title:'Capture Session',  sub:'Digital mode for live capture · Traditional mode for quick log entry'},
+  sessions:  {title:'Session Log',      sub:'Master index — every session, searchable and retrievable'},
+  acttracker:{title:'Action Tracker',   sub:'Every action extracted from sessions'},
+  topics:    {title:'Topic Register',   sub:'Your personal knowledge taxonomy'},
+  reflection:{title:'Reflection',       sub:'Monthly synthesis and pattern review'},
+  guide:     {title:'How to Use',       sub:'The PKCS system explained for both modes'},
+  settings:  {title:'Settings',         sub:'API key setup and data management'},
+};
+const PAGES={};
+let curPage='';
+
+function goTo(page){
+  curPage=page;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const el=document.getElementById('nav-'+page);if(el)el.classList.add('active');
+  const m=PAGE_META[page]||{title:page,sub:''};
+  document.getElementById('pg-title').textContent=m.title;
+  document.getElementById('pg-sub').textContent=m.sub;
+  document.getElementById('pg-acts').innerHTML='';
+  if(PAGES[page])PAGES[page]();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════════════
+function setHTML(h){document.getElementById('pg-content').innerHTML=h}
+function setActs(h){document.getElementById('pg-acts').innerHTML=h}
+
+function toast(msg,type='ok'){
+  const el=document.createElement('div');
+  el.className='toast '+type;el.textContent=msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+
+function nextId(arr,pfx){
+  const max=arr.reduce((m,x)=>Math.max(m,parseInt((x.id||'0').replace(pfx+'-','')||0)),0);
+  return pfx+'-'+String(max+1).padStart(3,'0');
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function nl2br(s){return esc(s).replace(/\n/g,'<br>')}
+
+function fmt(d){
+  if(!d)return '—';
+  try{const dt=new Date(d+'T12:00:00');return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
+  catch(e){return d;}
+}
+
+function isOverdue(due,status){
+  if(!due||['Done','Cancelled','Closed'].includes(status))return false;
+  return new Date(due+'T23:59:59')<new Date();
+}
+
+function topicCol(code){const t=DB_T.find(x=>x.code===code);return t?t.col:'#4A6E96'}
+function topicArea(code){const t=DB_T.find(x=>x.code===code);return t?t.area:code}
+
+function codePill(code){
+  if(!code)return '';
+  const col=topicCol(code);
+  return `<span class="code-pill" style="background:${col}22;color:${col}">${esc(code)}</span>`;
+}
+
+function srcBadge(s){
+  const cls=(s||'').replace(/[\s-]+/g,'');
+  return `<span class="src-badge src-${cls}">${esc(s)}</span>`;
+}
+
+function statusBadge(s){
+  const m={'Open':'b-open','In Progress':'b-prog','Done':'b-done','Closed':'b-done','No Action':'b-none','On Hold':'b-hold','Cancelled':'b-none'};
+  return `<span class="badge ${m[s]||'b-none'}">${esc(s)}</span>`;
+}
+
+function capBadge(mode){
+  if(!mode||mode==='traditional')return `<span class="cap-badge trad">Traditional</span>`;
+  if(mode==='ai')return `<span class="cap-badge">AI Capture</span>`;
+  return `<span class="cap-badge">Digital Capture</span>`;
+}
+
+function topicOpts(sel=''){
+  return DB_T.map(t=>`<option value="${t.code}"${t.code===sel?' selected':''}>${t.code} — ${t.area}</option>`).join('');
+}
+
+const SRC_TYPES=['Meeting','Training','AI Session','Briefing','Conference','Workshop','Webinar','Other'];
+const SESS_ST=['Open','In Progress','Closed','No Action'];
+const ACT_ST=['Open','In Progress','Done','On Hold','Cancelled'];
+
+// ═══════════════════════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════════════════════
+function openModal(title,body,btns=[],large=false){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').innerHTML=body;
+  document.getElementById('modal-foot').innerHTML=btns.map(b=>`<button class="btn ${b.cls}" onclick="${b.fn}">${b.lbl}</button>`).join('');
+  document.getElementById('modal-box').className='modal'+(large?' modal-lg':'');
+  document.getElementById('modal-ov').style.display='flex';
+}
+function closeModal(){document.getElementById('modal-ov').style.display='none';}
+function onOvClick(e){if(e.target===document.getElementById('modal-ov'))closeModal();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// ═══════════════════════════════════════════════════════════════════════
+// NOTES VIEWER — shows full Cornell or AI capture notes
+// ═══════════════════════════════════════════════════════════════════════
+function viewNotes(id){
+  const s=DB_S.find(x=>x.id===id);if(!s)return;
+  const rel=DB_A.filter(a=>a.sessRef===id);
+
+  let notesHtml='';
+  if(s.captureMode==='ai'){
+    notesHtml=`
+      <div class="nv-hdr" style="background:var(--blue)">AI Conversation Capture — ${esc(s.title)}</div>
+      <div class="nv-ai-grid">
+        <div class="nv-ai-left">
+          <div class="nv-col-lbl" style="color:var(--blue)">Prompt Intent</div>
+          <div class="nv-text">${nl2br(s.aiIntent)||'<span style="color:var(--mg)">—</span>'}</div>
+          <div class="divider"></div>
+          <div class="nv-col-lbl" style="color:var(--blue)">What to Verify</div>
+          <div class="nv-text">${nl2br(s.aiVerify)||'<span style="color:var(--mg)">—</span>'}</div>
+        </div>
+        <div class="nv-ai-right">
+          <div class="nv-col-lbl" style="color:var(--blue)">Response Summary</div>
+          <div class="nv-text">${nl2br(s.aiResponse)||'<span style="color:var(--mg)">—</span>'}</div>
+        </div>
+      </div>
+      <div class="nv-syn">
+        <div class="nv-col-lbl">What to Deploy</div>
+        <div class="nv-text">${nl2br(s.synthesis||s.aiDeploy)||'<span style="color:var(--mg)">—</span>'}</div>
+      </div>`;
+  } else if(s.captureMode==='digital'){
+    notesHtml=`
+      <div class="nv-hdr">Digital Capture — ${esc(s.title)}</div>
+      <div class="nv-grid">
+        <div class="nv-cue">
+          <div class="nv-col-lbl">Cue Column</div>
+          <div class="nv-text">${nl2br(s.cueNotes)||'<span style="color:var(--mg)">—</span>'}</div>
+        </div>
+        <div class="nv-notes">
+          <div class="nv-col-lbl">Notes</div>
+          <div class="nv-text">${nl2br(s.mainNotes)||'<span style="color:var(--mg)">—</span>'}</div>
+        </div>
+      </div>
+      <div class="nv-syn">
+        <div class="nv-col-lbl">Synthesis</div>
+        <div class="nv-text">${nl2br(s.synthesis)||'<span style="color:var(--mg)">—</span>'}</div>
+      </div>`;
+  } else {
+    // Traditional — show extracted notes if available, plus photo
+    const hasNotes = s.cueNotes||s.mainNotes;
+    notesHtml=`
+      <div class="nv-hdr">Traditional Capture — ${esc(s.title)}</div>`;
+    if(hasNotes){
+      notesHtml+=`
+      <div class="nv-grid">
+        <div class="nv-cue">
+          <div class="nv-col-lbl">Cue Column (scanned)</div>
+          <div class="nv-text">${nl2br(s.cueNotes)||'<span style="color:var(--mg)">—</span>'}</div>
+        </div>
+        <div class="nv-notes">
+          <div class="nv-col-lbl">Notes (scanned)</div>
+          <div class="nv-text">${nl2br(s.mainNotes)||'<span style="color:var(--mg)">—</span>'}</div>
+        </div>
+      </div>
+      <div class="nv-syn">
+        <div class="nv-col-lbl">Synthesis</div>
+        <div class="nv-text">${nl2br(s.synthesis)||'<span style="color:var(--mg)">—</span>'}</div>
+      </div>`;
+    } else {
+      notesHtml+=`<div class="info-box">Notes captured in physical journal${s.ref?' at: <strong>'+esc(s.ref)+'</strong>':''}.</div>`;
+    }
+    // Thumbnail if stored
+    if(s.photoThumb){
+      notesHtml+=`
+        <div style="margin-top:10px">
+          <div class="nv-col-lbl mb-1">Scanned Journal Page</div>
+          <img src="data:image/jpeg;base64,${esc(s.photoThumb)}"
+               style="max-width:100%;border-radius:6px;border:1px solid var(--bd);cursor:pointer"
+               title="Tap to view full image"
+               onclick="viewFullPhoto('${esc(id)}')">
+          <div class="text-xs text-mg mt-1">Thumbnail stored locally · Tap to view full scan</div>
+        </div>`;
+    }
+  }
+
+  if(s.actionNotes||s.notes){
+    notesHtml+=`<div class="nv-act"><div class="nv-col-lbl">Action / Notes</div><div class="nv-text" style="margin-top:4px">${nl2br(s.actionNotes||s.notes)}</div></div>`;
+  }
+
+  const relHtml=rel.length?`<hr class="divider"><div class="fw7 text-navy mb-2" style="font-size:13px">Related Actions (${rel.length})</div>${rel.map(a=>`<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd)"><span style="font-family:monospace;font-size:12px;color:var(--mg)">${a.id}</span>${statusBadge(a.status)}<span style="font-size:13px">${esc(a.desc)}</span></div>`).join('')}`:'';
+
+  openModal(`${s.id} — ${s.title}`,`
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px">
+      ${codePill(s.topic)} ${srcBadge(s.source)} ${statusBadge(s.status)} ${capBadge(s.captureMode)}
+      <span class="text-sm text-mg">${fmt(s.date)}</span>
+    </div>
+    ${s.fac?`<div class="text-sm text-mg mb-2">Facilitator: ${esc(s.fac)}</div>`:''}
+    <div class="rp mb-3"><div class="rp-q">Key Insight</div><div style="margin-top:5px;font-size:13px">${esc(s.insight)}</div></div>
+    <div class="notes-viewer">${notesHtml}</div>
+    ${relHtml}
+  `,[{lbl:'Close',cls:'btn-ghost',fn:'closeModal()'}],true);
+}
+
+async function viewFullPhoto(sessionId){
+  const photo = await retrievePhoto(sessionId);
+  if(!photo){ toast('Full photo not found. It may have been cleared with browser data.','err'); return; }
+  openModal('Scanned Journal Page — '+sessionId,`
+    <div style="text-align:center">
+      <img src="data:${photo.mime};base64,${photo.data}"
+           style="max-width:100%;border-radius:6px;border:1px solid var(--bd)">
+      <div class="text-xs text-mg mt-2">Stored locally in your browser · Scan again to update</div>
+    </div>
+  `,[{lbl:'Close',cls:'btn-ghost',fn:'closeModal()'}],true);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════
+function pgDashboard(){
+  const total=DB_S.length,tA=DB_A.length;
+  const open=DB_A.filter(a=>a.status==='Open').length;
+  const done=DB_A.filter(a=>a.status==='Done').length;
+  const ov=DB_A.filter(a=>isOverdue(a.due,a.status)).length;
+  const pct=tA?Math.round(done/tA*100):0;
+  const digital=DB_S.filter(s=>s.captureMode==='digital'||s.captureMode==='ai').length;
+
+  const now=new Date(),mkeys=[],mcnt={};
+  for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const k=d.toLocaleDateString('en-GB',{month:'short'});mkeys.push(k);mcnt[k]=0;}
+  DB_S.forEach(s=>{if(!s.date)return;const d=new Date(s.date+'T12:00:00');const k=d.toLocaleDateString('en-GB',{month:'short'});if(k in mcnt)mcnt[k]++;});
+  const mmax=Math.max(1,...Object.values(mcnt));
+  const bars=mkeys.map(m=>`<div class="mbar-w"><div class="mbar" style="height:${Math.max(3,mcnt[m]/mmax*60)}px" title="${mcnt[m]} sessions"></div><div class="mlbl">${m}</div></div>`).join('');
+
+  const tc={};DB_S.forEach(s=>{if(s.topic)tc[s.topic]=(tc[s.topic]||0)+1;});
+  const st=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const tmax=Math.max(1,...st.map(([,n])=>n));
+  const tbars=st.map(([c,n])=>`<div class="tbar-row"><div class="tbar-lbl" style="color:${topicCol(c)}">${c}</div><div class="tbar-track"><div class="tbar-fill" style="width:${n/tmax*100}%;background:${topicCol(c)}"></div></div><div class="tbar-n">${n}</div></div>`).join('');
+
+  const recent=[...DB_S].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  const recHtml=recent.length?recent.map(s=>`<li class="ri"><div class="rdot" style="background:${topicCol(s.topic)}"></div><div><div class="rtitle">${esc(s.title)}</div><div class="rmeta">${fmt(s.date)} ${codePill(s.topic)} ${srcBadge(s.source)} ${capBadge(s.captureMode)}</div></div></li>`).join(''):'<li class="ri"><div class="text-sm text-mg">No sessions yet. Tap Capture Session to start.</div></li>';
+
+  const ovActs=DB_A.filter(a=>isOverdue(a.due,a.status));
+  const ovHtml=ovActs.length?ovActs.map(a=>`<li class="ri"><div class="rdot" style="background:var(--red)"></div><div><div class="rtitle">${esc(a.desc)}</div><div class="rmeta">Due ${fmt(a.due)} · ${a.owner} · ${codePill(a.topic)}</div></div></li>`).join(''):'<li class="ri"><div style="color:var(--green);font-size:13px">✓ No overdue actions.</div></li>';
+
+  setHTML(`
+    <div class="trigger-box mb-4">
+      <div style="font-size:10px;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:1px;font-weight:600">AI Trigger Test — Before Every AI Session</div>
+      <div class="trigger-q">"Did this AI conversation produce something that will change what I do, decide, say, or believe?"</div>
+      <div class="trigger-ans"><div class="t-no">✗ NO — skip capture. This was retrieval, not thinking.</div><div class="t-yes">✓ YES — use AI mode in Capture Session.</div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"      ><div class="stat-num">${total}</div><div class="stat-lbl">Sessions</div></div>
+      <div class="stat-card blue" ><div class="stat-num">${digital}</div><div class="stat-lbl">Digital Captures</div></div>
+      <div class="stat-card gold" ><div class="stat-num">${tA}</div><div class="stat-lbl">Actions Raised</div></div>
+      <div class="stat-card green"><div class="stat-num">${pct}%</div><div class="stat-lbl">Completion</div></div>
+      <div class="stat-card amber"><div class="stat-num">${open}</div><div class="stat-lbl">Open Actions</div></div>
+      <div class="stat-card red"  ><div class="stat-num">${ov}</div><div class="stat-lbl">Overdue</div></div>
+    </div>
+    <div class="dash-grid">
+      <div>
+        <div class="card mb-3">
+          <div class="card-hdr"><div class="card-title">Sessions — Last 6 Months</div></div>
+          <div class="card-body">
+            <div class="month-chart mb-3">${bars}</div>
+            <hr class="divider">
+            <div class="text-xs text-mg mb-2" style="text-transform:uppercase;letter-spacing:.4px;font-weight:600">Active Topics</div>
+            <div class="tbars">${tbars||'<div class="text-sm text-mg">No sessions yet.</div>'}</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Recent Sessions</div><button class="btn btn-sm btn-outline" onclick="goTo('sessions')">View All</button></div>
+          <div class="card-body" style="padding:9px 18px"><ul class="recent-list">${recHtml}</ul></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title" style="color:var(--red)">Overdue Actions</div><button class="btn btn-sm btn-outline" onclick="goTo('acttracker')">View All</button></div>
+          <div class="card-body" style="padding:9px 18px"><ul class="recent-list">${ovHtml}</ul></div>
+        </div>
+      </div>
+    </div>`);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CAPTURE PAGE — the new core feature
+// ═══════════════════════════════════════════════════════════════════════
+let captureMode='none'; // 'digital' | 'ai' | 'traditional'
+let aiModeOn=false;
+
+function pgCapture(){
+  setActs('');
+  setHTML(`
+    <div class="mb-4">
+      <div class="mode-grid">
+        <div class="mode-card" id="mc-digital" onclick="selectCaptureMode('digital')">
+          <div class="mode-icon">✎</div>
+          <div class="mode-title">Digital Capture</div>
+          <div class="mode-desc">Type directly into a full Cornell layout during any session — training, meeting, briefing, or conference. Notes are stored in the app. No journal needed.</div>
+          <div class="mode-badge">Recommended for Gen Z &amp; Digital Professionals</div>
+        </div>
+        <div class="mode-card" id="mc-traditional" onclick="selectCaptureMode('traditional')">
+          <div class="mode-icon">📓</div>
+          <div class="mode-title">Traditional Log Entry</div>
+          <div class="mode-desc">You have already written your notes in the printed Cornell Journal. Enter the session reference and key insight here to register it in the system.</div>
+          <div class="mode-badge">Recommended for Traditional &amp; Senior Professionals</div>
+        </div>
+      </div>
+    </div>
+    <div id="capture-area"></div>
+  `);
+  captureMode='none';aiModeOn=false;
+}
+
+function selectCaptureMode(mode){
+  captureMode=mode;
+  document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('mc-'+mode).classList.add('selected');
+  if(mode==='digital')renderDigitalCapture();
+  else renderTraditionalCapture();
+}
+
+function renderDigitalCapture(){
+  aiModeOn=false;
+  const sid=nextId(DB_S,'S');
+  const today=new Date().toISOString().slice(0,10);
+
+  document.getElementById('capture-area').innerHTML=`
+    <div class="capture-wrap">
+      <div class="capture-hdr">
+        <div class="capture-hdr-left">
+          <div class="capture-hdr-title">New Session — Digital Cornell Capture</div>
+          <button class="ai-toggle" id="ai-toggle-btn" onclick="toggleAiMode()">
+            <span class="toggle-dot"></span>
+            <span id="ai-toggle-lbl">Switch to AI Session Mode</span>
+          </button>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45)">Session: <strong style="color:var(--gold-mid)" id="sess-id-display">${sid}</strong></div>
+      </div>
+      <div class="capture-meta">
+        <div class="fg"><label>Session #</label><input id="cap-id" value="${sid}" oninput="document.getElementById('sess-id-display').textContent=this.value"></div>
+        <div class="fg"><label>Date</label><input type="date" id="cap-date" value="${today}"></div>
+        <div class="fg"><label>Topic Code <span class="req">*</span></label><select id="cap-topic"><option value="">Select topic...</option>${topicOpts()}</select></div>
+        <div class="fg"><label>Source Type <span class="req">*</span></label><select id="cap-source"><option value="">Select source...</option>${SRC_TYPES.map(s=>`<option>${s}</option>`).join('')}</select></div>
+      </div>
+      <div class="capture-meta" style="grid-template-columns:2fr 1fr">
+        <div class="fg"><label>Session Title <span class="req">*</span></label><input id="cap-title" placeholder="e.g. Procurement Controls Workshop — Module 3"></div>
+        <div class="fg"><label>Facilitator / Presenter</label><input id="cap-fac" placeholder="e.g. Dr. Mano"></div>
+      </div>
+      <div id="cornell-area">${cornellHTML()}</div>
+      <div class="capture-bottom">
+        <div class="syn-wrap">
+          <div class="syn-label" id="syn-label">Synthesis — The one thing that matters most from this session</div>
+          <textarea class="cornell-textarea syn-ta" id="cap-syn" placeholder="Write after the session ends — the key insight in your own words."></textarea>
+        </div>
+        <div class="act-wrap">
+          <div class="syn-label">Action — What will I do differently?</div>
+          <textarea class="cornell-textarea act-ta" id="cap-act" placeholder="Specific action, decision, or behaviour..."></textarea>
+        </div>
+      </div>
+      <div class="capture-footer">
+        <div class="session-progress">Capturing in <strong>${captureMode==='ai'?'AI':'Digital'} mode</strong> — all notes stored in the app. No journal entry needed.</div>
+        <div style="display:flex;gap:9px">
+          <button class="btn btn-ghost" onclick="pgCapture()">Cancel</button>
+          <button class="btn btn-green" onclick="saveDigitalCapture()">✓ Save Session</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function cornellHTML(){
+  return `<div class="cornell-wrap">
+    <div class="cornell-cue">
+      <div class="col-label">Cue Column</div>
+      <div class="col-hint">Keywords · Questions · Concepts to revisit</div>
+      <textarea class="cornell-textarea cue-ta" id="cap-cue" placeholder="Key terms, questions that came up, concepts you want to follow up...&#10;&#10;Write these during or after the session."></textarea>
+    </div>
+    <div class="cornell-notes">
+      <div class="col-label">Notes</div>
+      <div class="col-hint">Capture selectively — not a transcript. What matters, why it matters.</div>
+      <textarea class="cornell-textarea notes-ta" id="cap-notes" placeholder="Type your notes here during the session...&#10;&#10;Focus on what is new, surprising, or directly relevant to your work. Transcribing everything is not capture."></textarea>
+    </div>
+  </div>`;
+}
+
+function aiCornellHTML(){
+  return `<div class="ai-cornell-wrap">
+    <div class="ai-left">
+      <div class="ai-col-label">Prompt Intent</div>
+      <div class="col-hint">What were you trying to think through, decide, or produce?</div>
+      <textarea class="cornell-textarea ai-ta" id="cap-ai-intent" placeholder="Describe the thinking task, not the prompt text..."></textarea>
+      <div class="ai-col-label mt-2">What to Verify</div>
+      <div class="col-hint">Facts, figures, legal interpretation — check before acting.</div>
+      <textarea class="cornell-textarea ai-ta" id="cap-ai-verify" placeholder="List items that need independent verification..."></textarea>
+    </div>
+    <div class="ai-right">
+      <div class="ai-col-label">Response Summary</div>
+      <div class="col-hint">Synthesise the AI output — do not paste. Three lines maximum.</div>
+      <textarea class="cornell-textarea" style="min-height:280px" id="cap-ai-response" placeholder="What did the AI produce? Synthesise it in your own words.&#10;&#10;If you are pasting the output directly, you have not processed it yet."></textarea>
+    </div>
+  </div>`;
+}
+
+function toggleAiMode(){
+  aiModeOn=!aiModeOn;
+  const btn=document.getElementById('ai-toggle-btn');
+  const lbl=document.getElementById('ai-toggle-lbl');
+  const synLbl=document.getElementById('syn-label');
+  if(aiModeOn){
+    btn.classList.add('ai-on');
+    lbl.textContent='AI Mode ON — tap to switch back';
+    document.getElementById('cornell-area').innerHTML=aiCornellHTML();
+    if(synLbl)synLbl.textContent='What to Deploy — ready to use, share, or act on now';
+    // Update source to AI Session
+    const src=document.getElementById('cap-source');
+    if(src){for(let i=0;i<src.options.length;i++){if(src.options[i].text==='AI Session'){src.selectedIndex=i;break;}}}
+  } else {
+    btn.classList.remove('ai-on');
+    lbl.textContent='Switch to AI Session Mode';
+    document.getElementById('cornell-area').innerHTML=cornellHTML();
+    if(synLbl)synLbl.textContent='Synthesis — The one thing that matters most from this session';
+  }
+}
+
+function saveDigitalCapture(){
+  const g=id=>document.getElementById(id);
+  const id=(g('cap-id').value||'').trim();
+  const date=g('cap-date').value;
+  const topic=g('cap-topic').value;
+  const source=g('cap-source').value;
+  const title=(g('cap-title').value||'').trim();
+  const fac=(g('cap-fac').value||'').trim();
+  const syn=(g('cap-syn').value||'').trim();
+  const act=(g('cap-act').value||'').trim();
+
+  if(!id){toast('Please enter a Session ID.','err');return;}
+  if(!topic){toast('Please select a Topic Code.','err');return;}
+  if(!source){toast('Please select a Source Type.','err');return;}
+  if(!title){toast('Please enter a session title.','err');return;}
+  if(DB_S.find(x=>x.id===id)){toast('Session ID already exists. Please use a different ID.','err');return;}
+
+  let sess;
+  if(aiModeOn){
+    const aiIntent=(g('cap-ai-intent').value||'').trim();
+    const aiResponse=(g('cap-ai-response').value||'').trim();
+    const aiVerify=(g('cap-ai-verify').value||'').trim();
+    const aiDeploy=syn;
+    const autoInsight=aiDeploy||aiResponse||'AI session captured.';
+    sess={id,date,topic,source,title,fac,
+      insight:autoInsight.length>180?autoInsight.slice(0,177)+'...':autoInsight,
+      actionFlag:act?'Yes':'No',actRef:'',status:'Open',ref:'',notes:'',
+      captureMode:'ai',cueNotes:'',mainNotes:'',synthesis:syn,actionNotes:act,
+      aiIntent,aiResponse,aiVerify,aiDeploy};
+  } else {
+    const cue=(g('cap-cue')?.value||'').trim();
+    const notes=(g('cap-notes')?.value||'').trim();
+    const autoInsight=syn||notes.split('\n')[0]||'Session captured digitally.';
+    sess={id,date,topic,source,title,fac,
+      insight:autoInsight.length>180?autoInsight.slice(0,177)+'...':autoInsight,
+      actionFlag:act?'Yes':'No',actRef:'',status:'Open',ref:'',notes:'',
+      captureMode:'digital',cueNotes:cue,mainNotes:notes,synthesis:syn,actionNotes:act,
+      aiIntent:'',aiResponse:'',aiVerify:'',aiDeploy:''};
+  }
+
+  DB_S.unshift(sess);
+  persist();
+  toast('Session '+id+' saved successfully.','ok');
+
+  // If there is an action, prompt to add it to tracker
+  if(act){
+    setTimeout(()=>{
+      openModal('Add to Action Tracker?',`
+        <div class="info-box mb-2">Your session has an action recorded. Would you like to add it to the Action Tracker now?</div>
+        <div class="rp"><div class="rp-q">Action captured:</div><div style="margin-top:5px;font-size:13px">${esc(act)}</div></div>
+      `,[
+        {lbl:'Skip for now',cls:'btn-ghost',fn:`closeModal();goTo('sessions')`},
+        {lbl:'Add to Tracker',cls:'btn-primary',fn:`closeModal();prefillAction('${id}','${topic}','${date.replace(/'/g,'')}','${act.replace(/'/g,"\\'").replace(/\n/g,' ')}')`},
+      ]);
+    },400);
+  } else {
+    goTo('sessions');
+  }
+}
+
+function renderTraditionalCapture(){
+  const sid=nextId(DB_S,'S');
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('capture-area').innerHTML=`
+    <div class="ocr-banner mb-3">
+      <div class="ocr-banner-left">
+        <div class="ocr-banner-icon">📷</div>
+        <div class="ocr-banner-text">
+          <div class="ocr-banner-title">Smart Journal Scan</div>
+          <div class="ocr-banner-desc">Tap the zone below and photograph your page. The scan starts automatically and fills the fields for you. Review, correct if needed, then save.</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+        <div class="inet-badge"><span class="inet-dot"></span>NEEDS INTERNET TO SCAN</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45)">Requires internet connection</div>
+      </div>
+    </div>
+
+    <div class="info-box mb-3" style="display:flex;gap:12px;align-items:flex-start">
+      <div style="font-size:20px;flex-shrink:0">🖨</div>
+      <div>
+        <strong>Need to print your pages?</strong> Open the <strong>PKCS Modular Insert Pack PDF</strong> (sent separately in your bundle) in any PDF viewer and print — File → Print, or Ctrl+P / Cmd+P. Select A5 paper if available, or scale to fit on A4. The Quick Start Card on page 1 stays in your binder permanently. Pages 2–19 are consumables — print more as needed.
+      </div>
+    </div>
+
+    <div class="card mb-3" id="scan-card">
+      <div class="card-hdr">
+        <div class="card-title">Step 1 — Photograph Your Journal Page</div>
+        <div class="inet-badge" style="background:var(--navy-lt);color:var(--navy);border-color:var(--bd)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>Scan starts automatically</div>
+      </div>
+      <div class="card-body">
+        <div id="scan-zone">
+          <div class="scan-drop-zone" id="drop-zone" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+            <input type="file" id="scan-file-input" accept="image/*" capture="environment" onchange="onFileSelected(event)">
+            <div class="scan-drop-icon">📄</div>
+            <div class="scan-drop-title">Tap to photograph or upload your journal page</div>
+            <div class="scan-drop-sub">Supports JPG, PNG, HEIC · Works with handwritten and printed notes</div>
+          </div>
+          <div style="text-align:center;margin-top:10px">
+            <span style="font-size:12px;color:var(--mg)">or drag and drop an image here</span>
+          </div>
+        </div>
+        <div id="scan-result" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="card" id="entry-card">
+      <div class="card-hdr">
+        <div class="card-title">Step 2 — Review and Save</div>
+        <span class="text-sm text-mg">Fields filled automatically by scan · Correct anything before saving</span>
+      </div>
+      <div class="card-body">
+        <div class="info-box mb-3">
+          The scan has filled what it could detect. Check every field — particularly <strong>Key Insight</strong> (always write this in your own words), <strong>Topic Code</strong> (only you know your taxonomy), and <strong>Session Title</strong>. Save when satisfied.
+        </div>
+        <div class="fgap">
+          <div class="fr">
+            <div class="fg"><label>Session # <span class="req">*</span></label><input id="tr-id" value="${sid}"><div class="fhint">Write this number on the top of your journal page.</div></div>
+            <div class="fg"><label>Date <span class="req">*</span></label><input type="date" id="tr-date" value="${today}"></div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label>Topic Code <span class="req">*</span></label><select id="tr-topic"><option value="">Select...</option>${topicOpts()}</select></div>
+            <div class="fg"><label>Source Type <span class="req">*</span></label><select id="tr-source"><option value="">Select...</option>${SRC_TYPES.map(s=>`<option>${s}</option>`).join('')}</select></div>
+          </div>
+          <div class="fg"><label>Session Title <span class="req">*</span></label><input id="tr-title" placeholder="e.g. Vendor Review: Supplier X Renewal"></div>
+          <div class="fg"><label>Facilitator / Presenter</label><input id="tr-fac" placeholder="e.g. Dr. Mano"></div>
+          <div class="fg">
+            <label>Key Insight — one sentence <span class="req">*</span></label>
+            <textarea id="tr-insight" rows="2" placeholder="The single most important thing from this session..."></textarea>
+            <div class="fhint">If you cannot write it in one sentence, you have not synthesised it yet.</div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label>Cue Column (keywords, questions)</label><textarea id="tr-cue" rows="3" placeholder="Scanned cue column content will appear here..."></textarea></div>
+            <div class="fg"><label>Main Notes</label><textarea id="tr-notes-main" rows="3" placeholder="Scanned notes content will appear here..."></textarea></div>
+          </div>
+          <div class="fg"><label>Action — What will I do differently?</label><textarea id="tr-action" rows="2" placeholder="Specific action, decision, or behaviour..."></textarea></div>
+          <div class="fr">
+            <div class="fg"><label>Page / File Reference</label><input id="tr-ref" placeholder="Journal p.3 / filename"><div class="fhint">Where to find the physical original.</div></div>
+            <div class="fg"><label>Status</label><select id="tr-status">${SESS_ST.map(s=>`<option>${s}</option>`).join('')}</select></div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label>Action Flagged?</label><select id="tr-aflag"><option>No</option><option>Yes</option></select></div>
+            <div class="fg"><label>Additional Notes</label><input id="tr-extra" placeholder="Context, follow-ups, verification needed..."></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:9px;padding-top:4px">
+            <button class="btn btn-ghost" onclick="pgCapture()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveTraditional()">Save Log Entry</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function saveTraditional(){
+  const g=id=>document.getElementById(id);
+  const id=(g('tr-id').value||'').trim();
+  const date=g('tr-date').value;
+  const topic=g('tr-topic').value;
+  const source=g('tr-source').value;
+  const title=(g('tr-title').value||'').trim();
+  const insight=(g('tr-insight').value||'').trim();
+
+  // Hard blocks — essential
+  if(!id){toast('Please enter a Session ID (e.g. S-006).','err');return;}
+  if(!title){toast('Please enter a session title.','err');return;}
+  if(!insight){toast('Please enter the key insight — one sentence that matters most.','err');return;}
+  if(DB_S.find(x=>x.id===id)){toast('Session ID already exists. Use a different number.','err');return;}
+
+  // Soft warnings
+  const warnings=[];
+  if(!topic) warnings.push('No Topic Code selected — this session will be harder to retrieve by subject.');
+  if(!source) warnings.push('No Source Type selected — filtering by source will not work for this session.');
+
+  const doSave=()=>{
+    const act=(g('tr-action')?.value||'').trim();
+    const sess={id,date:date||new Date().toISOString().slice(0,10),topic,source,title,
+      fac:(g('tr-fac').value||'').trim(),insight,
+      actionFlag:act?'Yes':g('tr-aflag').value,
+      actRef:'',status:g('tr-status').value,
+      ref:(g('tr-ref').value||'').trim(),
+      notes:(g('tr-extra')?.value||'').trim(),
+      captureMode:'traditional',
+      cueNotes:(g('tr-cue')?.value||'').trim(),
+      mainNotes:(g('tr-notes-main')?.value||'').trim(),
+      synthesis:insight,actionNotes:act,
+      aiIntent:'',aiResponse:'',aiVerify:'',aiDeploy:'',
+      photoThumb:ocrThumbBase64||''};
+    DB_S.unshift(sess);persist();
+    if(ocrImageBase64) storePhoto(id,ocrImageBase64,ocrImageType);
+    ocrThumbBase64=null;
+    toast('Session '+id+' saved.','ok');
+    if(act){
+      setTimeout(()=>{
+        openModal('Add to Action Tracker?',`
+          <div class="info-box mb-2">Your session has an action. Add it to the Action Tracker now?</div>
+          <div class="rp"><div class="rp-q">Action captured:</div><div style="margin-top:5px;font-size:13px">${esc(act)}</div></div>
+        `,[
+          {lbl:'Skip for now',cls:'btn-ghost',fn:`closeModal();goTo('sessions')`},
+          {lbl:'Add to Tracker',cls:'btn-primary',fn:`closeModal();prefillAction('${id}','${topic}','${(date||'').replace(/'/g,'')}','${act.replace(/'/g,"\\'").replace(/\n/g,' ')}')`},
+        ]);
+      },400);
+    } else { goTo('sessions'); }
+  };
+
+  if(warnings.length){
+    openModal('Save with incomplete fields?',`
+      <div class="warn-box mb-3"><strong>Note before saving:</strong><br>${warnings.map(w=>`• ${w}`).join('<br>')}</div>
+      <div class="text-sm text-mg">You can edit this session later from the Session Log.</div>
+    `,[
+      {lbl:'Go back and complete',cls:'btn-ghost',fn:'closeModal()'},
+      {lbl:'Save anyway',cls:'btn-gold',fn:'closeModal();window._doSave()'},
+    ]);
+    window._doSave=doSave;
+  } else { doSave(); }
+}
+
+function prefillAction(sessId,topic,date,desc){
+  openNewActWithPrefill(sessId,topic,date,desc);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SESSION LOG
+// ═══════════════════════════════════════════════════════════════════════
+let SF={q:'',topic:'',source:'',status:'',capMode:''};
+
+function pgSessions(){
+  setActs(`<button class="btn btn-primary" onclick="goTo('capture')">+ Capture Session</button>`);
+  renderSessTbl();
+}
+
+function renderSessTbl(){
+  const rows=[...DB_S].filter(s=>{
+    const q=SF.q.toLowerCase();
+    if(q&&!`${s.title} ${s.insight} ${s.fac} ${s.notes} ${s.mainNotes} ${s.aiResponse}`.toLowerCase().includes(q))return false;
+    if(SF.topic &&s.topic !==SF.topic) return false;
+    if(SF.source&&s.source!==SF.source)return false;
+    if(SF.status&&s.status!==SF.status)return false;
+    if(SF.capMode==='digital'&&!['digital','ai'].includes(s.captureMode))return false;
+    if(SF.capMode==='traditional'&&s.captureMode!=='traditional')return false;
+    return true;
+  }).sort((a,b)=>b.date.localeCompare(a.date));
+
+  const topicOps=[...new Set(DB_S.map(s=>s.topic))].filter(Boolean).sort().map(c=>`<option value="${c}"${SF.topic===c?' selected':''}>${c}</option>`).join('');
+  const srcOps=SRC_TYPES.map(s=>`<option value="${s}"${SF.source===s?' selected':''}>${s}</option>`).join('');
+  const stOps=SESS_ST.map(s=>`<option value="${s}"${SF.status===s?' selected':''}>${s}</option>`).join('');
+
+  const trs=rows.length?rows.map(s=>` <tr>
+    <td><span style="font-family:monospace;font-size:12px;color:var(--mg)">${esc(s.id)}</span></td>
+    <td style="white-space:nowrap">${fmt(s.date)}</td>
+    <td>${codePill(s.topic)}</td>
+    <td>${srcBadge(s.source)}</td>
+    <td style="max-width:200px"><strong>${esc(s.title)}</strong>${s.fac?`<div class="text-xs text-mg">${esc(s.fac)}</div>`:''}</td>
+    <td style="max-width:170px;font-size:12px">${esc(s.insight)}</td>
+    <td>${capBadge(s.captureMode)}</td>
+    <td>${statusBadge(s.status)}</td>
+    <td><div class="td-acts">
+      <button class="btn btn-xs btn-outline" onclick="viewNotes('${esc(s.id)}')">View</button>
+      <button class="btn btn-xs btn-ghost"   onclick="openEditSess('${esc(s.id)}')">Edit</button>
+      <button class="btn btn-xs btn-danger"  onclick="deleteSess('${esc(s.id)}')">Del</button>
+    </div></td>
+  </tr>`).join('')
+  :`<tr><td colspan="9"><div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No sessions found</div><div class="empty-text">Adjust filters or capture your first session.</div><button class="btn btn-primary" onclick="goTo('capture')">+ Capture Session</button></div></td></tr>`;
+
+  setHTML(`
+    <div class="card mb-3">
+      <div class="card-body" style="padding:11px 16px">
+        <div class="filter-bar">
+          <input class="search" type="text" placeholder="🔍 Search all notes..." value="${esc(SF.q)}" oninput="SF.q=this.value;renderSessTbl()">
+          <select onchange="SF.topic=this.value;renderSessTbl()"><option value="">All Topics</option>${topicOps}</select>
+          <select onchange="SF.source=this.value;renderSessTbl()"><option value="">All Sources</option>${srcOps}</select>
+          <select onchange="SF.status=this.value;renderSessTbl()"><option value="">All Statuses</option>${stOps}</select>
+          <select onchange="SF.capMode=this.value;renderSessTbl()"><option value="">All Modes</option><option value="digital">Digital / AI</option><option value="traditional">Traditional</option></select>
+          <button class="btn btn-ghost btn-sm" onclick="SF={q:'',topic:'',source:'',status:'',capMode:''};renderSessTbl()">Clear</button>
+          <span class="text-sm text-mg" style="margin-left:auto">${rows.length} of ${DB_S.length}</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Date</th><th>Topic</th><th>Source</th><th>Title</th><th>Key Insight</th><th>Mode</th><th>Status</th><th></th></tr></thead>
+          <tbody>${trs}</tbody>
+        </table>
+      </div>
+    </div>`);
+}
+
+function sessEditForm(s={}){
+  return `<div class="fgap">
+    <div class="fr">
+      <div class="fg"><label>Session #</label><input id="se-id" value="${esc(s.id||'')}" readonly style="background:var(--off)"></div>
+      <div class="fg"><label>Date</label><input type="date" id="se-date" value="${s.date||''}"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Topic Code</label><select id="se-topic"><option value="">Select...</option>${topicOpts(s.topic)}</select></div>
+      <div class="fg"><label>Source Type</label><select id="se-source"><option value="">Select...</option>${SRC_TYPES.map(t=>`<option${t===s.source?' selected':''}>${t}</option>`).join('')}</select></div>
+    </div>
+    <div class="fg"><label>Title</label><input id="se-title" value="${esc(s.title||'')}"></div>
+    <div class="fg"><label>Facilitator</label><input id="se-fac" value="${esc(s.fac||'')}"></div>
+    <div class="fg"><label>Key Insight</label><textarea id="se-insight" rows="2">${esc(s.insight||'')}</textarea></div>
+    <div class="fr">
+      <div class="fg"><label>Action Flagged?</label><select id="se-aflag"><option${s.actionFlag!=='Yes'?' selected':''}>No</option><option${s.actionFlag==='Yes'?' selected':''}>Yes</option></select></div>
+      <div class="fg"><label>Action Ref</label><input id="se-aref" value="${esc(s.actRef||'')}"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Status</label><select id="se-status">${SESS_ST.map(t=>`<option${t===s.status?' selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="fg"><label>Page / File Ref</label><input id="se-ref" value="${esc(s.ref||'')}"></div>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="se-notes" rows="2">${esc(s.notes||'')}</textarea></div>
+  </div>`;
+}
+
+function openEditSess(id){
+  const s=DB_S.find(x=>x.id===id);if(!s)return;
+  openModal('Edit Session: '+id,sessEditForm(s),[
+    {lbl:'Cancel',cls:'btn-ghost',fn:'closeModal()'},
+    {lbl:'Save Changes',cls:'btn-primary',fn:`saveEditSess('${id}')`},
+  ]);
+}
+
+function saveEditSess(id){
+  const g=i=>document.getElementById(i);
+  const s=DB_S.find(x=>x.id===id);if(!s)return;
+  s.date=g('se-date').value;s.topic=g('se-topic').value;s.source=g('se-source').value;
+  s.title=g('se-title').value.trim();s.fac=g('se-fac').value.trim();
+  s.insight=g('se-insight').value.trim();s.actionFlag=g('se-aflag').value;
+  s.actRef=g('se-aref').value.trim();s.status=g('se-status').value;
+  s.ref=g('se-ref').value.trim();s.notes=g('se-notes').value.trim();
+  persist();closeModal();renderSessTbl();toast('Session updated.');
+}
+
+function deleteSess(id){
+  if(!confirm('Delete session '+id+'? This cannot be undone.'))return;
+  DB_S=DB_S.filter(x=>x.id!==id);persist();renderSessTbl();toast('Session deleted.');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ACTION TRACKER
+// ═══════════════════════════════════════════════════════════════════════
+let AF={q:'',topic:'',status:''};
+
+function pgActTracker(){
+  setActs(`<button class="btn btn-primary" onclick="openNewAct()">+ New Action</button>`);
+  renderActTbl();
+}
+
+function renderActTbl(){
+  const rows=[...DB_A].filter(a=>{
+    const q=AF.q.toLowerCase();
+    if(q&&!`${a.desc} ${a.owner} ${a.notes} ${a.sessRef}`.toLowerCase().includes(q))return false;
+    if(AF.topic &&a.topic !==AF.topic) return false;
+    if(AF.status&&a.status!==AF.status)return false;
+    return true;
+  }).sort((a,b)=>{
+    const oa=isOverdue(a.due,a.status),ob=isOverdue(b.due,b.status);
+    if(oa&&!ob)return -1;if(!oa&&ob)return 1;
+    return(a.due||'').localeCompare(b.due||'');
+  });
+
+  const topOps=[...new Set(DB_A.map(a=>a.topic))].filter(Boolean).sort().map(c=>`<option value="${c}"${AF.topic===c?' selected':''}>${c}</option>`).join('');
+  const stOps=ACT_ST.map(s=>`<option value="${s}"${AF.status===s?' selected':''}>${s}</option>`).join('');
+  const open=DB_A.filter(a=>a.status==='Open').length;
+  const prog=DB_A.filter(a=>a.status==='In Progress').length;
+  const done=DB_A.filter(a=>a.status==='Done').length;
+  const ov=DB_A.filter(a=>isOverdue(a.due,a.status)).length;
+  const pct=DB_A.length?Math.round(done/DB_A.length*100):0;
+
+  const trs=rows.length?rows.map(a=>{
+    const od=isOverdue(a.due,a.status);
+    return `<tr class="${od?'overdue-row':''}">
+      <td><span style="font-family:monospace;font-size:12px;color:var(--mg)">${esc(a.id)}</span></td>
+      <td><span class="row-link" onclick="viewNotes('${esc(a.sessRef)}')">${esc(a.sessRef)}</span></td>
+      <td>${codePill(a.topic)}</td>
+      <td style="max-width:240px;font-size:13px">${esc(a.desc)}</td>
+      <td>${esc(a.owner)}</td>
+      <td style="color:${od?'var(--red)':'inherit'};font-weight:${od?700:400};white-space:nowrap">${fmt(a.due)}${od?' ⚠':''}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>${a.done?fmt(a.done):'—'}</td>
+      <td><div class="td-acts">
+        <button class="btn btn-xs btn-outline" onclick="openEditAct('${esc(a.id)}')">Edit</button>
+        <button class="btn btn-xs btn-danger"  onclick="deleteAct('${esc(a.id)}')">Del</button>
+      </div></td>
+    </tr>`;
+  }).join('')
+  :`<tr><td colspan="9"><div class="empty"><div class="empty-icon">✓</div><div class="empty-title">No actions found</div><div class="empty-text">Flag actions in sessions and add them here.</div></div></td></tr>`;
+
+  setHTML(`
+    <div class="stats-grid mb-3" style="grid-template-columns:repeat(5,1fr)">
+      <div class="stat-card red"  ><div class="stat-num">${ov}</div>  <div class="stat-lbl">Overdue</div></div>
+      <div class="stat-card amber"><div class="stat-num">${open}</div> <div class="stat-lbl">Open</div></div>
+      <div class="stat-card"      ><div class="stat-num">${prog}</div> <div class="stat-lbl">In Progress</div></div>
+      <div class="stat-card green"><div class="stat-num">${done}</div> <div class="stat-lbl">Done</div></div>
+      <div class="stat-card gold" ><div class="stat-num">${pct}%</div><div class="stat-lbl">Complete</div></div>
+    </div>
+    <div class="card mb-3">
+      <div class="card-body" style="padding:11px 16px">
+        <div class="filter-bar">
+          <input class="search" type="text" placeholder="🔍 Search actions..." value="${esc(AF.q)}" oninput="AF.q=this.value;renderActTbl()">
+          <select onchange="AF.topic=this.value;renderActTbl()"><option value="">All Topics</option>${topOps}</select>
+          <select onchange="AF.status=this.value;renderActTbl()"><option value="">All Statuses</option>${stOps}</select>
+          <button class="btn btn-ghost btn-sm" onclick="AF={q:'',topic:'',status:''};renderActTbl()">Clear</button>
+          <span class="text-sm text-mg" style="margin-left:auto">${rows.length} of ${DB_A.length}</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Session</th><th>Topic</th><th>Action Description</th><th>Owner</th><th>Deadline</th><th>Status</th><th>Completed</th><th></th></tr></thead>
+          <tbody>${trs}</tbody>
+        </table>
+      </div>
+    </div>`);
+}
+
+function actFormHTML(a={}){
+  return `<div class="fgap">
+    <div class="fr">
+      <div class="fg"><label>Action # <span class="req">*</span></label><input id="af-id" value="${esc(a.id||nextId(DB_A,'A'))}"></div>
+      <div class="fg"><label>Session Ref</label><input id="af-sess" value="${esc(a.sessRef||'')}" placeholder="S-001"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Date Captured</label><input type="date" id="af-date" value="${a.captured||new Date().toISOString().slice(0,10)}"></div>
+      <div class="fg"><label>Topic Code</label><select id="af-topic"><option value="">Select...</option>${topicOpts(a.topic)}</select></div>
+    </div>
+    <div class="fg"><label>Action Description <span class="req">*</span></label><textarea id="af-desc" rows="3" placeholder="Specific behaviour, decision, or task...">${esc(a.desc||'')}</textarea></div>
+    <div class="fr">
+      <div class="fg"><label>Owner</label><input id="af-owner" value="${esc(a.owner||'')}" placeholder="Name or role"></div>
+      <div class="fg"><label>Deadline</label><input type="date" id="af-due" value="${a.due||''}"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Status</label><select id="af-status">${ACT_ST.map(s=>`<option${s===a.status?' selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="fg"><label>Completion Date</label><input type="date" id="af-done" value="${a.done||''}"></div>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="af-notes" rows="2" placeholder="Outcome, context, reason for status...">${esc(a.notes||'')}</textarea></div>
+  </div>`;
+}
+
+function openNewAct(){
+  openModal('New Action',actFormHTML(),[
+    {lbl:'Cancel',cls:'btn-ghost',fn:'closeModal()'},
+    {lbl:'Save Action',cls:'btn-primary',fn:'saveAct(null)'},
+  ]);
+}
+
+function openNewActWithPrefill(sessId,topic,date,desc){
+  const a={sessRef:sessId,topic,captured:date,desc,status:'Open'};
+  openModal('Add to Action Tracker',actFormHTML(a),[
+    {lbl:'Cancel',cls:'btn-ghost',fn:`closeModal();goTo('sessions')`},
+    {lbl:'Save Action',cls:'btn-primary',fn:'saveAct(null)'},
+  ]);
+}
+
+function openEditAct(id){
+  const a=DB_A.find(x=>x.id===id);if(!a)return;
+  openModal('Edit Action: '+id,actFormHTML(a),[
+    {lbl:'Cancel',cls:'btn-ghost',fn:'closeModal()'},
+    {lbl:'Save Changes',cls:'btn-primary',fn:`saveAct('${id}')`},
+  ]);
+}
+
+function saveAct(editId){
+  const g=id=>document.getElementById(id);
+  const id=(g('af-id').value||'').trim();
+  const desc=(g('af-desc').value||'').trim();
+  if(!id||!desc){toast('Action # and description are required.','err');return;}
+  const obj={id,sessRef:g('af-sess').value.trim(),captured:g('af-date').value,
+    topic:g('af-topic').value,desc,owner:g('af-owner').value.trim(),
+    due:g('af-due').value,status:g('af-status').value,
+    done:g('af-done').value,notes:g('af-notes').value.trim()};
+  if(editId){const i=DB_A.findIndex(x=>x.id===editId);if(i>=0)DB_A[i]=obj;}
+  else{
+    if(DB_A.find(x=>x.id===id)){toast('Action ID already exists.','err');return;}
+    DB_A.unshift(obj);
+  }
+  persist();closeModal();renderActTbl();
+  toast(editId?'Action updated.':'Action saved.');
+}
+
+function deleteAct(id){
+  if(!confirm('Delete action '+id+'?'))return;
+  DB_A=DB_A.filter(x=>x.id!==id);persist();renderActTbl();toast('Action deleted.');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TOPIC REGISTER
+// ═══════════════════════════════════════════════════════════════════════
+function pgTopics(){
+  setActs(`<button class="btn btn-primary" onclick="openNewTopic()">+ New Topic Code</button>`);
+  renderTopics();
+}
+
+function renderTopics(){
+  const trs=DB_T.map(t=>{
+    const sc=DB_S.filter(s=>s.topic===t.code).length;
+    const ac=DB_A.filter(a=>a.topic===t.code).length;
+    return `<tr>
+      <td>${codePill(t.code)}</td>
+      <td><strong>${esc(t.area)}</strong></td>
+      <td style="text-align:center;font-family:monospace;font-size:14px;color:var(--slate)">${sc}</td>
+      <td style="text-align:center;font-family:monospace;font-size:14px;color:var(--amber)">${ac}</td>
+      <td><div style="width:90px;height:6px;background:var(--stripe);border-radius:3px;overflow:hidden"><div style="height:100%;width:${sc?Math.min(100,sc*12):0}%;background:${t.col};border-radius:3px"></div></div></td>
+      <td><div class="td-acts">
+        <button class="btn btn-xs btn-outline" onclick="openEditTopic('${esc(t.code)}')">Edit</button>
+        <button class="btn btn-xs btn-danger"  onclick="deleteTopic('${esc(t.code)}')">Del</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  setHTML(`
+    <div class="card mb-3" style="border-left:4px solid var(--gold)">
+      <div class="card-body" style="padding:11px 16px;font-size:13px;color:var(--navy)">
+        <strong>Topic codes</strong> are your personal knowledge taxonomy. Use the same 2-3 letter code consistently across your Cornell Journal pages, the Session Log, and Action Tracker. This is what makes everything retrievable by subject across months and years.
+      </div>
+    </div>
+    <div class="card">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Code</th><th>Subject Area</th><th style="text-align:center">Sessions</th><th style="text-align:center">Actions</th><th>Activity</th><th></th></tr></thead>
+          <tbody>${trs}</tbody>
+        </table>
+      </div>
+    </div>`);
+}
+
+function topicFormHTML(t={}){
+  return `<div class="fgap">
+    <div class="fr">
+      <div class="fg"><label>Code (2-3 letters) <span class="req">*</span></label><input id="tf-code" value="${esc(t.code||'')}" placeholder="GOV" maxlength="5" oninput="this.value=this.value.toUpperCase()"><div class="fhint">Write this on every relevant journal page.</div></div>
+      <div class="fg"><label>Colour</label><input type="color" id="tf-col" value="${t.col||'#4A6E96'}" style="height:40px;cursor:pointer"></div>
+    </div>
+    <div class="fg"><label>Subject Area <span class="req">*</span></label><input id="tf-area" value="${esc(t.area||'')}" placeholder="e.g. Governance &amp; Controls"></div>
+  </div>`;
+}
+
+function openNewTopic(){
+  openModal('New Topic Code',topicFormHTML(),[
+    {lbl:'Cancel',cls:'btn-ghost',fn:'closeModal()'},
+    {lbl:'Save Topic',cls:'btn-primary',fn:'saveTopic(null)'},
+  ]);
+}
+
+function openEditTopic(code){
+  const t=DB_T.find(x=>x.code===code);if(!t)return;
+  openModal('Edit Topic: '+code,topicFormHTML(t),[
+    {lbl:'Cancel',cls:'btn-ghost',fn:'closeModal()'},
+    {lbl:'Save Changes',cls:'btn-primary',fn:`saveTopic('${code}')`},
+  ]);
+}
+
+function saveTopic(editCode){
+  const code=(document.getElementById('tf-code').value||'').trim().toUpperCase();
+  const area=(document.getElementById('tf-area').value||'').trim();
+  const col=document.getElementById('tf-col').value;
+  if(!code||!area){toast('Code and subject area required.','err');return;}
+  const obj={code,area,col};
+  if(editCode){const i=DB_T.findIndex(x=>x.code===editCode);if(i>=0)DB_T[i]=obj;}
+  else{
+    if(DB_T.find(x=>x.code===code)){toast('Code already exists.','err');return;}
+    DB_T.push(obj);
+  }
+  persist();closeModal();renderTopics();
+  toast(editCode?'Topic updated.':'Topic saved.');
+}
+
+function deleteTopic(code){
+  const used=DB_S.filter(s=>s.topic===code).length+DB_A.filter(a=>a.topic===code).length;
+  if(!confirm(used?`"${code}" is used in ${used} records. Delete anyway?`:`Delete topic code "${code}"?`))return;
+  DB_T=DB_T.filter(x=>x.code!==code);persist();renderTopics();toast('Topic deleted.');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// REFLECTION
+// ═══════════════════════════════════════════════════════════════════════
+function pgReflection(){
+  setActs(`<button class="btn btn-gold" onclick="saveReflection()">💾 Save Reflection</button>`);
+  const now=new Date();
+  const key=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const saved=DB_R[key]||{};
+  const mSess=DB_S.filter(s=>{if(!s.date)return false;const d=new Date(s.date+'T12:00:00');return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();});
+  const mActs=DB_A.filter(a=>{if(!a.captured)return false;const d=new Date(a.captured+'T12:00:00');return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();});
+  const bySrc={};mSess.forEach(s=>{bySrc[s.source]=(bySrc[s.source]||0)+1;});
+  const srcRows=Object.entries(bySrc).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bd);font-size:13px"><span>${k}</span><strong>${v}</strong></div>`).join('');
+  const tc={};mSess.forEach(s=>{if(s.topic)tc[s.topic]=(tc[s.topic]||0)+1;});
+  const tmax=Math.max(1,...Object.values(tc));
+  const tbars=Object.entries(tc).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<div class="tbar-row"><div class="tbar-lbl" style="color:${topicCol(c)}">${c}</div><div class="tbar-track"><div class="tbar-fill" style="width:${n/tmax*100}%;background:${topicCol(c)}"></div></div><div class="tbar-n">${n}</div></div>`).join('');
+  const mname=now.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const prompts=[
+    {k:'shifted',q:'What shifted this month?',hint:'What genuinely changed in how you think about your work, decisions, or knowledge gaps?'},
+    {k:'applied',q:'What did you apply?',hint:'Where did something you captured show up in a real decision, conversation, or action?'},
+    {k:'need',q:'What do you still need?',hint:'What remains unresolved, unverified, or not yet acted on from this month?'},
+    {k:'pattern',q:'The pattern this month',hint:'Looking across all sessions: what theme kept coming up that you may be underestimating?'},
+    {k:'commit',q:'One commitment for next month',hint:'The single behaviour you will add or sustain in the month ahead.'},
+  ];
+  setHTML(`
+    <div class="dash-grid">
+      <div>
+        <div class="card mb-3">
+          <div class="card-hdr"><div class="card-title">Month Summary: ${mname}</div></div>
+          <div class="card-body">
+            <div class="stats-grid" style="grid-template-columns:1fr 1fr 1fr;gap:9px">
+              <div class="stat-card"><div class="stat-num">${mSess.length}</div><div class="stat-lbl">Sessions</div></div>
+              <div class="stat-card gold"><div class="stat-num">${mActs.length}</div><div class="stat-lbl">Actions</div></div>
+              <div class="stat-card green"><div class="stat-num">${mActs.filter(a=>a.status==='Done').length}</div><div class="stat-lbl">Done</div></div>
+            </div>
+            ${srcRows?`<hr class="divider"><div class="text-xs text-mg mb-2" style="text-transform:uppercase;letter-spacing:.4px;font-weight:600">By Source</div>${srcRows}`:''}
+            ${tbars?`<hr class="divider"><div class="text-xs text-mg mb-2" style="text-transform:uppercase;letter-spacing:.4px;font-weight:600">By Topic</div><div class="tbars">${tbars}</div>`:''}
+            ${!mSess.length?'<div class="text-sm text-mg">No sessions logged this month yet.</div>':''}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Reflection: ${mname}</div></div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:13px">
+            ${prompts.map(p=>`<div><div class="rp mb-1"><div class="rp-q">${p.q}</div><div class="rp-hint">${p.hint}</div></div><textarea id="rf-${p.k}" rows="3" style="width:100%" placeholder="Write here...">${esc(saved[p.k]||'')}</textarea></div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`);
+}
+
+function saveReflection(){
+  const now=new Date();
+  const key=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  DB_R[key]={
+    shifted:document.getElementById('rf-shifted')?.value||'',
+    applied:document.getElementById('rf-applied')?.value||'',
+    need:   document.getElementById('rf-need')?.value||'',
+    pattern:document.getElementById('rf-pattern')?.value||'',
+    commit: document.getElementById('rf-commit')?.value||'',
+  };
+  persist();toast('Reflection saved for '+key,'ok');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// HOW TO USE
+// ═══════════════════════════════════════════════════════════════════════
+function pgGuide(){
+  setActs('');
+
+  const fieldRow=(name,req,desc,example)=>`
+    <tr>
+      <td style="white-space:nowrap;font-family:monospace;font-size:12px;color:var(--navy);font-weight:600">${name}</td>
+      <td style="text-align:center">${req==='required'
+        ?'<span style="background:var(--red-lt);color:var(--red);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700">Required</span>'
+        :'<span style="background:var(--green-lt);color:var(--green);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600">Recommended</span>'}</td>
+      <td style="font-size:12px;line-height:1.55">${desc}</td>
+      <td style="font-size:11px;color:var(--mg);font-family:monospace;white-space:nowrap">${example}</td>
+    </tr>`;
+
+  setHTML(`<div style="max-width:780px">
+
+    <div class="trigger-box mb-4">
+      <div style="font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:5px">The AI Trigger Test — Before Every AI Session</div>
+      <div class="trigger-q">"Did this AI conversation change what I do, decide, say, or believe?"</div>
+      <div class="trigger-ans"><div class="t-no">✗ NO — skip capture. This was retrieval, not thinking.</div><div class="t-yes">✓ YES — use AI mode in Capture Session.</div></div>
+    </div>
+
+    <div class="card mb-3" style="border-left:4px solid var(--navy)">
+      <div class="card-hdr">
+        <div class="card-title">How to Print Your Pages</div>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.7">
+        <div>The printable pages are in a separate file — the <strong>PKCS Modular Insert Pack PDF</strong> included in your bundle. The app and the PDF are two parts of the same system. The app is the digital archive. The PDF is the physical stationery.</div>
+        <div style="background:var(--navy-lt);border-radius:var(--r-sm);padding:12px 16px">
+          <div style="font-weight:700;color:var(--navy);margin-bottom:6px">To print:</div>
+          <div>1. Open <strong>PKCS Modular Insert Pack PDF</strong> in any PDF viewer (Adobe, Preview, browser)</div>
+          <div>2. File → Print &nbsp;or&nbsp; <kbd style="background:var(--bd);padding:1px 6px;border-radius:3px;font-family:monospace;font-size:12px">Ctrl+P</kbd> / <kbd style="background:var(--bd);padding:1px 6px;border-radius:3px;font-family:monospace;font-size:12px">Cmd+P</kbd></div>
+          <div>3. Paper size: <strong>A5</strong> if your printer supports it. If not, select A4 and choose <em>Scale to fit</em> or <em>Shrink to fit</em></div>
+          <div>4. Print double-sided if you want front and back, or single-sided for individual loose pages</div>
+        </div>
+        <div style="background:var(--gold-lt);border-left:3px solid var(--gold);padding:10px 14px;border-radius:4px;font-size:12px">
+          <strong>Page 1 (Quick Start Card)</strong> — keep this in your binder permanently. It does not need replacing.<br>
+          <strong>Pages 2–19 (Insert Pages)</strong> — 3 copies of each page type. Print more as needed. These are consumables — once scanned and saved, you can discard the physical page.
+        </div>
+      </div>
+    </div>
+        <span class="text-xs text-mg">Write these on your physical page before the session begins</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div style="padding:12px 18px;background:var(--navy-lt);border-bottom:1px solid var(--bd);font-size:13px;color:var(--navy);line-height:1.6">
+          <strong>For traditional users writing on paper:</strong> before your session begins, write the first four fields at the top of your page in this exact order. This takes under one minute and ensures the page scans correctly into the system with minimal manual correction.
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th style="width:120px">Field</th><th style="width:110px;text-align:center">Status</th><th>What to write</th><th style="width:150px">Example</th></tr></thead>
+            <tbody>
+              ${fieldRow('Session #','required',
+                'A unique sequential number. Check the Session Log in the app for the next available number before you sit down. Write it at the top right of every page. This is the key that links your physical page to the digital record.',
+                'S-007')}
+              ${fieldRow('Date','required',
+                'The date of the session. Write it clearly — the scan reads most formats.',
+                '12 May 2025')}
+              ${fieldRow('Topic Code','required',
+                'Your 2-3 letter classification code from the Topic Register. Check the register before each session. Write it next to the session number. This determines how your session is filtered and retrieved.',
+                'GOV / PRO / AI')}
+              ${fieldRow('Source Type','required',
+                'The type of session. Write one of the eight exact values listed below — the scan auto-detects this from what you write.',
+                'Training')}
+              ${fieldRow('Session Title','required',
+                'A specific, descriptive heading. Not "Meeting" — something that tells you exactly what this was about six months from now.',
+                'Vendor Review: Supplier X Renewal')}
+              ${fieldRow('Facilitator','recommended',
+                'The trainer, presenter, chair, or AI tool used. Helps filter by who delivered the session.',
+                'Dr. Mano / Claude')}
+              ${fieldRow('Key Insight','required',
+                'One sentence written after the session ends. The single most important thing you are taking away. If you cannot write it in one sentence, you have not synthesised it yet. This field is non-negotiable.',
+                'Incumbent vendor has held spec authority for 3 cycles — independent test required.')}
+              ${fieldRow('Action','recommended',
+                'What you will do differently. Specific behaviour or decision. If present, flag it so it gets logged in the Action Tracker.',
+                'Commission market test before Q3 renewal.')}
+            </tbody>
+          </table>
+        </div>
+        <div style="padding:14px 18px;background:var(--gold-lt);border-top:1px solid var(--bd)">
+          <div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Write in this order — before, during, and after the session</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:11px">
+            <span style="font-size:10px;color:var(--mg);text-transform:uppercase;letter-spacing:.5px">Before:</span>
+            ${['Session #','Date','Topic Code','Source Type','Title'].map(f=>`<span style="background:var(--navy);color:#fff;padding:3px 10px;border-radius:20px;font-weight:600;font-size:11px">${f}</span>`).join('<span style="color:var(--mg)">→</span>')}
+            <span style="font-size:10px;color:var(--mg);text-transform:uppercase;letter-spacing:.5px;margin-left:6px">During:</span>
+            ${['Notes','Cue Column'].map(f=>`<span style="background:var(--slate);color:#fff;padding:3px 10px;border-radius:20px;font-weight:600;font-size:11px">${f}</span>`).join('<span style="color:var(--mg)">+</span>')}
+            <span style="font-size:10px;color:var(--mg);text-transform:uppercase;letter-spacing:.5px;margin-left:6px">After:</span>
+            ${['Key Insight','Action'].map(f=>`<span style="background:var(--gold);color:#fff;padding:3px 10px;border-radius:20px;font-weight:600;font-size:11px">${f}</span>`).join('<span style="color:var(--mg)">+</span>')}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-hdr"><div class="card-title">Source Type — Eight Exact Values</div></div>
+      <div class="card-body" style="padding:0">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th style="width:110px">Write exactly</th><th>Use when</th></tr></thead>
+            <tbody>
+              ${[
+                ['Meeting',    'Any formal or informal meeting — internal, client, vendor, or committee'],
+                ['Training',   'Training programme, course, module, or learning session you attended or delivered'],
+                ['AI Session', 'Any AI tool conversation (Claude, ChatGPT, Copilot) that passed the Trigger Test'],
+                ['Briefing',   'Update, situational report, status briefing, or management presentation'],
+                ['Conference', 'Industry conference, summit, forum, or convention'],
+                ['Workshop',   'Facilitated group session, design thinking, or problem-solving workshop'],
+                ['Webinar',    'Online session, virtual conference, or live-streamed presentation'],
+                ['Other',      'Any session that does not fit the above — describe context in the Notes field'],
+              ].map(([s,d])=>`<tr><td style="font-family:monospace;font-size:12px;font-weight:600;color:var(--navy)">${s}</td><td style="font-size:12px">${d}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-hdr">
+        <div class="card-title">Topic Codes — Current Register</div>
+        <span class="text-xs text-mg">Add, edit, or remove codes in the Topic Register page</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th style="width:70px">Code</th><th>Subject Area</th><th>Assign when the session primarily concerns</th></tr></thead>
+            <tbody>
+              ${DB_T.map(t=>`<tr>
+                <td><span class="code-pill" style="background:${t.col}22;color:${t.col}">${esc(t.code)}</span></td>
+                <td style="font-weight:600;font-size:13px">${esc(t.area)}</td>
+                <td style="font-size:12px;color:var(--mg)">${esc(t.area)} topics, decisions, or content</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div style="padding:10px 18px;background:var(--navy-lt);border-top:1px solid var(--bd);font-size:12px;color:var(--navy)">
+          If a session spans multiple topics, assign the <strong>primary</strong> topic. Note any secondary topic in the Notes field (e.g. "Secondary: LEG").
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3" style="border-left:4px solid var(--gold)">
+      <div class="card-hdr"><div class="card-title">How the Physical Page and App Connect</div></div>
+      <div class="card-body" style="font-size:13px;line-height:1.7">
+        The Session Number and Topic Code are the two fields that bridge paper and digital. Write them on your physical page before the session. After the session, open the app, go to <strong>Capture Session → Traditional mode</strong>, and scan or fill manually. The app stores the session as a retrievable index entry. The physical page is a temporary capture surface. The app is the permanent archive.
+        <div style="margin-top:10px;padding:10px 14px;background:var(--gold-lt);border-left:3px solid var(--gold);border-radius:4px;font-size:12px">
+          <strong>Scan tip:</strong> photograph in good light, flat on a surface. The smart scan reads your handwriting, auto-detects Source Type, and suggests a Topic Code. Session Number, Title, and Key Insight still require your review before saving. Topic Code is a suggestion only — only you know your taxonomy.
+        </div>
+      </div>
+    </div>
+
+    ${[
+      ['1','Layer 1: Capture','Use Digital Capture to type live during any session, or write on your printed PKCS page and scan it afterwards. Every session gets a Session Number and a Topic Code.'],
+      ['2','Layer 2: Classify','Topic Codes are your personal taxonomy — two to three letters that make any session findable by subject across months and years. Assign the same code on your physical page and in the Session Log.'],
+      ['3','Layer 3: Retrieve','The Session Log is your master index. Search across all captured text — including scanned notes — by topic, source, status, or keyword. Click View to see full notes and the stored scan photo for any session.'],
+      ['4','Layer 4: Convert','Log every action in the Action Tracker with owner, deadline, and status. Overdue items surface automatically. The Reflection page synthesises what you captured, applied, and still need to act on.'],
+      ['💾','Data and Storage','All data is stored in your browser. Nothing is sent to any server. The scan feature requires internet at the moment of scanning. Everything else works offline. Export CSV regularly from the sidebar to back up your Session Log.'],
+    ].map(([icon,title,text])=>`
+      <div class="card mb-3">
+        <div class="guide-card">
+          <div class="gi">${icon}</div>
+          <div><div class="gt">${title}</div><div class="gd">${text}</div></div>
+        </div>
+      </div>`).join('')}
+
+  </div>`);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PHOTO STORAGE — IndexedDB for full images, thumbnail in session record
+// ═══════════════════════════════════════════════════════════════════════
+
+let ocrThumbBase64 = null;  // compressed thumbnail stored with session record
+
+// Open IndexedDB
+function openPhotoDB(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open('pkcs_photos',1);
+    req.onupgradeneeded = e=>{
+      e.target.result.createObjectStore('photos',{keyPath:'id'});
+    };
+    req.onsuccess = e=>resolve(e.target.result);
+    req.onerror   = e=>reject(e.target.error);
+  });
+}
+
+async function storePhoto(sessionId, base64Data, mimeType){
+  try {
+    const db = await openPhotoDB();
+    const tx = db.transaction('photos','readwrite');
+    tx.objectStore('photos').put({id:sessionId, data:base64Data, mime:mimeType, ts:Date.now()});
+    await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
+    db.close();
+  } catch(e){ console.warn('Photo store failed:',e); }
+}
+
+async function retrievePhoto(sessionId){
+  try {
+    const db = await openPhotoDB();
+    const tx = db.transaction('photos','readonly');
+    const result = await new Promise((res,rej)=>{
+      const req=tx.objectStore('photos').get(sessionId);
+      req.onsuccess=e=>res(e.target.result);
+      req.onerror=e=>rej(e.target.error);
+    });
+    db.close();
+    return result||null;
+  } catch(e){ return null; }
+}
+
+async function deletePhoto(sessionId){
+  try {
+    const db = await openPhotoDB();
+    const tx = db.transaction('photos','readwrite');
+    tx.objectStore('photos').delete(sessionId);
+    db.close();
+  } catch(e){}
+}
+
+function generateThumb(base64Data, mimeType, maxW=200, maxH=260){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const scale=Math.min(maxW/img.width, maxH/img.height, 1);
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.round(img.width*scale);
+      canvas.height=Math.round(img.height*scale);
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      // Compress to JPEG at 0.6 quality for thumbnail
+      resolve(canvas.toDataURL('image/jpeg',0.6).split(',')[1]);
+    };
+    img.onerror=()=>resolve(null);
+    img.src=`data:${mimeType};base64,${base64Data}`;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// OCR ENGINE — Smart scan (internet required)
+// ═══════════════════════════════════════════════════════════════════════
+
+let ocrImageBase64 = null;
+let ocrImageType   = 'image/jpeg';
+
+function onDragOver(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.add('drag-over');
+}
+function onDragLeave(e){
+  document.getElementById('drop-zone').classList.remove('drag-over');
+}
+function onDrop(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if(file && file.type.startsWith('image/')) processImageFile(file);
+}
+function onFileSelected(e){
+  const file = e.target.files?.[0];
+  if(file) processImageFile(file);
+}
+
+function processImageFile(file){
+  ocrImageType = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = async function(ev){
+    const dataUrl = ev.target.result;
+    ocrImageBase64 = dataUrl.split(',')[1];
+    // Generate compressed thumbnail for storage with session
+    ocrThumbBase64 = await generateThumb(ocrImageBase64, ocrImageType);
+    showImagePreview(dataUrl, file.name);
+  };
+  reader.readAsDataURL(file);
+}
+
+function showImagePreview(dataUrl, filename){
+  const sz = document.getElementById('scan-zone');
+  if(!sz) return;
+  // Show preview briefly then auto-trigger scan
+  sz.innerHTML = `
+    <div class="scan-preview-wrap mb-2">
+      <img src="${dataUrl}" alt="Journal page preview">
+      <button class="scan-preview-remove" onclick="clearScan()" title="Remove image">✕</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div class="text-sm text-mg">📄 ${esc(filename)} — starting scan automatically...</div>
+      <button class="btn btn-ghost btn-sm" onclick="clearScan()">✕ Cancel</button>
+    </div>`;
+  // Auto-trigger scan after 400ms so user sees the preview
+  setTimeout(()=>runOCR(), 400);
+}
+
+function clearScan(){
+  ocrImageBase64 = null;
+  const sz = document.getElementById('scan-zone');
+  if(!sz) return;
+  sz.innerHTML = `
+    <div class="scan-drop-zone" id="drop-zone" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <input type="file" id="scan-file-input" accept="image/*" capture="environment" onchange="onFileSelected(event)">
+      <div class="scan-drop-icon">📄</div>
+      <div class="scan-drop-title">Tap to photograph or upload your journal page</div>
+      <div class="scan-drop-sub">Supports JPG, PNG, HEIC · Works with handwritten and printed notes</div>
+    </div>
+    <div style="text-align:center;margin-top:10px">
+      <span style="font-size:12px;color:var(--mg)">or drag and drop an image here</span>
+    </div>`;
+  const sr = document.getElementById('scan-result');
+  if(sr){ sr.style.display='none'; sr.innerHTML=''; }
+}
+
+async function runOCR(){
+  if(!ocrImageBase64){ toast('No image selected.','err'); return; }
+  const sz = document.getElementById('scan-zone');
+  const sr = document.getElementById('scan-result');
+
+  // Show processing state
+  if(sz) sz.innerHTML = `
+    <div class="ocr-processing">
+      <div class="ocr-spinner"></div>
+      <div class="ocr-processing-text">Reading your journal page...</div>
+      <div class="ocr-processing-sub">The smart scan is identifying your Cornell structure and extracting your notes.<br>This usually takes 5–15 seconds.</div>
+      <div class="inet-badge" style="margin-top:8px">🌐 Online scan in progress</div>
+    </div>`;
+
+  const prompt = `You are reading a handwritten or printed PKCS (Professional Knowledge Capture System) note page from a professional journal.
+
+Examine the image carefully. Extract all visible content into the JSON structure below.
+
+ZONE IDENTIFICATION:
+- TOP: session number, date, topic code, source type, title, facilitator
+- LEFT COLUMN (Cue Column): keywords, questions, concepts — usually the narrow left section
+- RIGHT COLUMN (Notes): main capture area — the wider right section
+- BOTTOM SYNTHESIS: summary or "one thing that matters most" box
+- ACTION: "what will I do differently" or action items
+
+SOURCE TYPE DETECTION — infer from context clues in the notes:
+- "Meeting" if: agenda, attendees, decisions, action items, chair, minutes
+- "Training" if: facilitator, module, programme, learning objectives, workshop activities
+- "AI Session" if: prompt, AI tool name (Claude, GPT, Copilot), trigger test, deploy
+- "Briefing" if: presenter, update, situational report, status
+- "Conference" if: keynote, panel, speakers, venue, sessions
+- "Workshop" if: group activity, breakout, exercise, facilitated
+- "Webinar" if: online, virtual, Zoom, Teams, webcast
+- Default to "Other" if unclear
+
+TOPIC CODE SUGGESTION — suggest a 2-3 letter code based on content:
+GOV=Governance/Controls, PRO=Procurement, VND=Vendor Management, STR=Strategy,
+FIN=Finance, OPS=Operations, HR=People/HR, AI=AI/Technology,
+LEG=Legal/Compliance, TRN=Training, MKT=Marketing, CUS=Client/Stakeholder
+
+Return ONLY a valid JSON object (no markdown, no explanation):
+{
+  "title": "session title or topic heading from the page, or empty string",
+  "date": "date in YYYY-MM-DD format if visible, or empty string",
+  "facilitator": "presenter, trainer, speaker, or AI tool name if visible",
+  "sourceType": "one of the exact values: Meeting, Training, AI Session, Briefing, Conference, Workshop, Webinar, Other",
+  "suggestedTopicCode": "your best 2-3 letter topic code suggestion based on content",
+  "topicCodeReason": "one short sentence explaining why you suggested that code",
+  "cueNotes": "full text from the cue/keywords column, preserving line breaks",
+  "mainNotes": "full text from the main notes column, preserving line breaks",
+  "synthesis": "text from the synthesis or summary zone",
+  "actionNotes": "action items or follow-up commitments",
+  "confidence": "high, medium, or low"
+}
+
+If a field cannot be determined, use an empty string. Do not invent content not visible in the image.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': SCAN_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: ocrImageType, data: ocrImageBase64 } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    if(!response.ok){
+      const err = await response.text();
+      throw new Error('Scan service error ('+response.status+'). Please try again.');
+    }
+
+    const data = await response.json();
+    const raw = data.content?.find(b=>b.type==='text')?.text || '';
+    let extracted;
+    try {
+      const clean = raw.replace(/```json|```/g,'').trim();
+      extracted = JSON.parse(clean);
+    } catch(pe){
+      throw new Error('Could not read scan result. Please try again.');
+    }
+
+    showOCRResult(extracted);
+
+  } catch(err){
+    if(sz) sz.innerHTML = `
+      <div class="ocr-err mb-3">
+        <strong>Scan could not complete.</strong><br>${esc(err.message)}<br><br>
+        The smart scan feature needs an active internet connection. Please check your connection and try again. You can also fill the fields manually below.
+      </div>
+      <button class="btn btn-outline" onclick="clearScan()">Try Again</button>`;
+    console.error('OCR error:', err);
+  }
+}
+
+function showOCRResult(extracted){
+  const sz = document.getElementById('scan-zone');
+  const confColor = extracted.confidence==='high'?'var(--green)':extracted.confidence==='medium'?'var(--amber)':'var(--red)';
+
+  const srcOpts = ['Meeting','Training','AI Session','Briefing','Conference','Workshop','Webinar','Other']
+    .map(s=>`<option value="${s}" ${s===extracted.sourceType?'selected':''}>${s}</option>`).join('');
+
+  const topicHint = extracted.suggestedTopicCode ?
+    `<div style="background:var(--gold-lt);border-left:3px solid var(--gold);padding:8px 12px;border-radius:4px;font-size:12px;margin-top:6px">
+      <strong>Suggested Topic Code: ${esc(extracted.suggestedTopicCode)}</strong> — ${esc(extracted.topicCodeReason||'')}
+      <br><span style="color:var(--mg)">Confirm or change the topic code in the form below.</span>
+    </div>` : '';
+
+  if(sz) sz.innerHTML = `
+    <div class="ocr-result">
+      <div class="ocr-result-hdr">✓ Scan complete — fields filled below. Review and save when ready.</div>
+      <div class="ocr-result-body">
+        <div class="fr">
+          <div class="ocr-field">
+            <label>Source Type <span style="color:var(--green);font-size:10px">(auto-detected)</span></label>
+            <select id="ocr-source">${srcOpts}</select>
+          </div>
+          <div class="ocr-field">
+            <label>Suggested Topic Code</label>
+            <input id="ocr-topic-suggestion" value="${esc(extracted.suggestedTopicCode||'')}" readonly
+                   style="background:var(--gold-lt);font-weight:600;color:var(--navy)">
+          </div>
+        </div>
+        ${topicHint}
+        <div class="fr">
+          <div class="ocr-field"><label>Cue Column extracted</label>
+            <textarea id="ocr-cue" rows="2">${esc(extracted.cueNotes||'')}</textarea></div>
+          <div class="ocr-field"><label>Notes extracted</label>
+            <textarea id="ocr-notes" rows="2">${esc(extracted.mainNotes||'')}</textarea></div>
+        </div>
+        <div class="ocr-field"><label>Synthesis extracted</label>
+          <textarea id="ocr-syn" rows="1">${esc(extracted.synthesis||'')}</textarea></div>
+        <div class="ocr-field"><label>Action items extracted</label>
+          <textarea id="ocr-action" rows="1">${esc(extracted.actionNotes||'')}</textarea></div>
+        <input type="hidden" id="ocr-title" value="${esc(extracted.title||'')}">
+        <input type="hidden" id="ocr-date"  value="${esc(extracted.date||'')}">
+        <input type="hidden" id="ocr-fac"   value="${esc(extracted.facilitator||'')}">
+      </div>
+      <div class="ocr-confidence">
+        <span style="color:${confColor};font-weight:600">● ${extracted.confidence||'unknown'} confidence</span>
+        · Review the form below before saving · <button class="btn btn-xs btn-ghost" onclick="clearScan()" style="margin-left:4px">🔄 Scan again</button>
+      </div>
+    </div>`;
+
+  // Auto-apply to fields immediately
+  applyOCRToFields();
+
+  // Scroll to entry form
+  setTimeout(()=>{
+    const ec=document.getElementById('entry-card');
+    if(ec) ec.scrollIntoView({behavior:'smooth',block:'start'});
+  }, 300);
+
+  toast('Fields filled from scan — review and save.','ok');
+}
+
+function applyOCRToFields(){
+  const g = id => { const el=document.getElementById(id); return el?el.value.trim():''; };
+
+  // Apply text fields — overwrite only if target is empty
+  const textFields = {
+    'tr-title':      g('ocr-title'),
+    'tr-date':       g('ocr-date'),
+    'tr-fac':        g('ocr-fac'),
+    'tr-insight':    g('ocr-syn'),
+    'tr-cue':        g('ocr-cue'),
+    'tr-notes-main': g('ocr-notes'),
+    'tr-action':     g('ocr-action'),
+  };
+  for(const [id,val] of Object.entries(textFields)){
+    const el=document.getElementById(id);
+    if(el && val && !el.value) el.value=val;
+  }
+
+  // Apply Source Type — auto-detected, always apply
+  const srcVal = g('ocr-source');
+  if(srcVal){
+    const srcEl = document.getElementById('tr-source');
+    if(srcEl){
+      for(let i=0;i<srcEl.options.length;i++){
+        if(srcEl.options[i].value===srcVal||srcEl.options[i].text===srcVal){
+          srcEl.selectedIndex=i; break;
+        }
+      }
+    }
+  }
+
+  // Apply topic suggestion — only if topic not already selected
+  const topicEl = document.getElementById('tr-topic');
+  const suggestedCode = g('ocr-topic-suggestion');
+  if(topicEl && suggestedCode && topicEl.value===''){
+    for(let i=0;i<topicEl.options.length;i++){
+      if(topicEl.options[i].value===suggestedCode){
+        topicEl.selectedIndex=i; break;
+      }
+    }
+  }
+
+  // Set action flag if action was captured
+  const actVal = g('ocr-action');
+  const afEl = document.getElementById('tr-aflag');
+  if(afEl && actVal) afEl.value='Yes';
+
+  const ec=document.getElementById('entry-card');
+  if(ec) ec.scrollIntoView({behavior:'smooth',block:'start'});
+  toast('Fields populated from scan. Topic Code pre-filled as suggestion — please confirm.','ok');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════════════════════════
+function exportCSV(){
+  const h=['Session #','Date','Topic','Source','Title','Facilitator','Key Insight','Capture Mode','Action Flagged','Status','Ref','Cue Notes','Main Notes','Synthesis','AI Intent','AI Response','AI Verify'];
+  const rows=DB_S.map(s=>[s.id,s.date,s.topic,s.source,s.title,s.fac,s.insight,s.captureMode,s.actionFlag,s.status,s.ref,s.cueNotes,s.mainNotes,s.synthesis,s.aiIntent,s.aiResponse,s.aiVerify]);
+  const csv=[h,...rows].map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`PKCS_Sessions_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();toast('Sessions exported to CSV.');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// API KEY MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════
+
+const API_KEY_STORE = 'pkcs_api_key';
+
+function getApiKey(){ return localStorage.getItem(API_KEY_STORE)||''; }
+function setApiKey(k){ localStorage.setItem(API_KEY_STORE, k); }
+function clearApiKey(){ localStorage.removeItem(API_KEY_STORE); }
+
+function showSetupOverlay(){
+  document.getElementById('setup-overlay').style.display='flex';
+}
+function dismissSetup(){
+  document.getElementById('setup-overlay').style.display='none';
+}
+function toggleKeyVisibility(){
+  const inp = document.getElementById('setup-key-input');
+  inp.type = inp.type==='password'?'text':'password';
+}
+function saveApiKey(){
+  const k=(document.getElementById('setup-key-input').value||'').trim();
+  if(!k){ toast('Please enter your API key.','err'); return; }
+  if(!k.startsWith('sk-ant-') && !k.startsWith('sk-')){
+    toast('That does not look like a valid API key. It should start with sk-ant-','err'); return;
+  }
+  setApiKey(k);
+  dismissSetup();
+  toast('API key saved. Smart Scan is now enabled.','ok');
+}
+
+// Settings page
+function pgSettings(){
+  setActs('');
+  const hasKey = !!getApiKey();
+  const maskedKey = hasKey ? 'sk-ant-••••••••' + getApiKey().slice(-6) : '';
+
+  setHTML(`<div style="max-width:560px">
+
+    <div class="card mb-3">
+      <div class="card-hdr"><div class="card-title">Smart Scan — API Key</div></div>
+      <div class="card-body">
+        <div class="fgap">
+          ${hasKey ? `
+            <div class="key-status" style="font-size:13px">
+              <div class="key-dot" style="background:var(--green)"></div>
+              <strong>API key configured</strong>
+              <span class="text-mg">— Smart Scan is enabled</span>
+            </div>
+            <div style="font-family:monospace;font-size:13px;background:var(--off);padding:9px 12px;border-radius:4px;border:1px solid var(--bd);color:var(--mg)">${maskedKey}</div>
+            <div style="display:flex;gap:9px">
+              <button class="btn btn-outline btn-sm" onclick="showChangeKey()">Change Key</button>
+              <button class="btn btn-danger btn-sm" onclick="confirmClearKey()">Remove Key</button>
+            </div>
+          ` : `
+            <div class="key-status" style="font-size:13px">
+              <div class="key-dot" style="background:var(--red)"></div>
+              <strong>No API key set</strong>
+              <span class="text-mg">— Smart Scan disabled</span>
+            </div>
+            <div class="info-box">Smart Scan needs an API key to read your handwritten pages. Get yours free at <strong>console.anthropic.com</strong> → API Keys → Create Key.</div>
+            <button class="btn btn-primary" onclick="showSetupOverlay()">Set Up Smart Scan</button>
+          `}
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-hdr"><div class="card-title">Data Storage</div></div>
+      <div class="card-body" style="font-size:13px;line-height:1.7;display:flex;flex-direction:column;gap:10px">
+        <div>All PKCS data — sessions, actions, topics, reflections — is stored in this browser on this device. Nothing is sent to any server. Clearing your browser data will erase everything.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="exportCSV()">↓ Export Session Log CSV</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmClearAll()">Clear All Data</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">About</div></div>
+      <div class="card-body" style="font-size:13px;line-height:1.7;color:var(--mg)">
+        PKCS v3.0 · Professional Knowledge Capture System<br>
+        Dr. Manoharan Murugeson · manodr.com<br>
+        Built for procurement, contract, and governance professionals.
+      </div>
+    </div>
+
+  </div>`);
+}
+
+function showChangeKey(){
+  openModal('Change API Key',`
+    <div class="fgap">
+      <div class="fg">
+        <label>New API Key</label>
+        <div class="key-input-wrap">
+          <input type="password" id="change-key-inp" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false" style="font-family:monospace">
+          <button class="key-toggle" onclick="(()=>{const i=document.getElementById('change-key-inp');i.type=i.type==='password'?'text':'password';})()" title="Show/hide">👁</button>
+        </div>
+      </div>
+      <div class="fhint">Get your key at console.anthropic.com → API Keys</div>
+    </div>
+  `,[
+    {lbl:'Cancel',cls:'btn-ghost',fn:'closeModal()'},
+    {lbl:'Save New Key',cls:'btn-primary',fn:'saveChangedKey()'},
+  ]);
+}
+
+function saveChangedKey(){
+  const k=(document.getElementById('change-key-inp')?.value||'').trim();
+  if(!k||(!k.startsWith('sk-ant-')&&!k.startsWith('sk-'))){
+    toast('Please enter a valid API key.','err'); return;
+  }
+  setApiKey(k); closeModal(); pgSettings();
+  toast('API key updated. Smart Scan is enabled.','ok');
+}
+
+function confirmClearKey(){
+  if(!confirm('Remove the API key? Smart Scan will be disabled until you add a new key.')) return;
+  clearApiKey(); pgSettings();
+  toast('API key removed.');
+}
+
+function confirmClearAll(){
+  if(!confirm('This will permanently delete ALL your sessions, actions, topics and reflections. This cannot be undone. Are you sure?')) return;
+  Object.values(SK).forEach(k=>localStorage.removeItem(k));
+  DB_S=DEF_SESS; DB_A=DEF_ACTS; DB_T=DEF_TOPS; DB_R={};
+  persist(); goTo('dashboard');
+  toast('All data cleared.');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PAGE MAP + INIT
+// ═══════════════════════════════════════════════════════════════════════
+PAGES.dashboard  = pgDashboard;
+PAGES.capture    = pgCapture;
+PAGES.sessions   = pgSessions;
+PAGES.acttracker = pgActTracker;
+PAGES.topics     = pgTopics;
+PAGES.reflection = pgReflection;
+PAGES.guide      = pgGuide;
+PAGES.settings   = pgSettings;
+
+// Init — show setup prompt if no API key configured
+goTo('dashboard');
+if(!getApiKey()){
+  setTimeout(()=>showSetupOverlay(), 800);
+}
+</script>
+</body>
+</html>
